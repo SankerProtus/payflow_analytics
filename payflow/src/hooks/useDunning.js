@@ -12,7 +12,7 @@ export const useDunning = () => {
       setError(null);
 
       const response = await dunningAPI.getList();
-      setDunningList(response.data);
+      setDunningList(response.data.dunning_cases || []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch dunning list");
     } finally {

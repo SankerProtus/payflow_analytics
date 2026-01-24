@@ -2,25 +2,24 @@ import { getDBConnection } from "../db/connection.js";
 import { sendSuccess, STATUS, asyncHandler } from "../utils/errorHandler.js";
 
 export const dashboardController = {
+  /**
+   * GET /api/dashboard
+   * Legacy endpoint - redirects to metrics
+   */
+  getDashboard: (req, res) => {
+    res.redirect("/api/dashboard/metrics");
+  },
 
-    /**
-     * GET /api/dashboard
-     * Legacy endpoint - redirects to metrics
-     */
-    getDashboard: (req, res) => {
-        res.redirect('/api/dashboard/metrics');
-    },
+  /**
+   * GET /api/dashboard/metrics
+   * Get dashboard metrics with period-over-period comparison
+   */
+  getDashboardMetrics: asyncHandler(async (req, res) => {
+    const db = getDBConnection();
+    const userId = req.user.id;
 
-    /**
-     * GET /api/dashboard/metrics
-     * Get dashboard metrics with period-over-period comparison
-     */
-    getDashboardMetrics: asyncHandler(async (req, res) => {
-        const db = getDBConnection();
-        const userId = req.user.id;
-
-        // Get metrics for current period (last 30 days) vs previous period
-        const metricsQuery = `
+    // Get metrics for current period (last 30 days) vs previous period
+    const metricsQuery = `
             WITH current_period AS (
                 SELECT
                     COALESCE(SUM(i.amount_paid) FILTER (WHERE i.status = 'paid'), 0) as revenue,
@@ -63,9 +62,9 @@ export const dashboardController = {
             churn_calc AS (
                 SELECT
                     CASE
-                        WHEN COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '60 days' AND created_at < NOW() - INTERVAL '30 days') > 0
-                        THEN (COUNT(*) FILTER (WHERE to_status = 'canceled' AND created_at >= NOW() - INTERVAL '30 days')::numeric /
-                              COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '60 days' AND created_at < NOW() - INTERVAL '30 days')::numeric * 100)
+                        WHEN COUNT(*) FILTER (WHERE sst.created_at >= NOW() - INTERVAL '60 days' AND sst.created_at < NOW() - INTERVAL '30 days') > 0
+                        THEN (COUNT(*) FILTER (WHERE to_status = 'canceled' AND sst.created_at >= NOW() - INTERVAL '30 days')::numeric /
+                              COUNT(*) FILTER (WHERE sst.created_at >= NOW() - INTERVAL '60 days' AND sst.created_at < NOW() - INTERVAL '30 days')::numeric * 100)
                         ELSE 0
                     END as churn_rate
                 FROM subscription_state_transitions sst
@@ -112,57 +111,79 @@ export const dashboardController = {
             FROM current_period cp, previous_period pp, mrr_calc mrr, churn_calc ch
         `;
 
-        const result = await db.query(metricsQuery, [userId]);
-        const data = result.rows[0];
+    const result = await db.query(metricsQuery, [userId]);
+    const data = result.rows[0];
 
-        sendSuccess(res, STATUS.OK, {
-            metrics: {
-                total_revenue: {
-                    value: parseInt(data.current_revenue),
-                    change: parseFloat(data.revenue_change.toFixed(2)),
-                    period: 'month',
-                },
-                active_customers: {
-                    value: parseInt(data.current_customers),
-                    change: parseFloat(data.customers_change.toFixed(2)),
-                    period: 'month',
-                },
-                active_subscriptions: {
-                    value: parseInt(data.current_subscriptions),
-                    change: parseFloat(data.subscriptions_change.toFixed(2)),
-                    period: 'month',
-                },
-                mrr: {
-                    value: parseInt(data.current_mrr),
-                    change: 0, // Would need historical MRR to calculate
-                    period: 'month',
-                },
-                churn_rate: {
-                    value: parseFloat(data.churn_rate.toFixed(2)),
-                    change: 0, // Would need historical churn to calculate
-                    period: 'month',
-                },
-                failed_payments: {
-                    value: parseInt(data.current_failed),
-                    change: parseFloat(data.failed_change.toFixed(2)),
-                    period: 'month',
-                },
-            },
-            period_start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            period_end: new Date().toISOString(),
-        });
-    }),
+    sendSuccess(res, STATUS.OK, {
+      metrics: {
+        total_revenue: {
+          value: parseInt(data.current_revenue) || 0,
+          change: parseFloat(
+            (data.revenue_change || 0).toFixed
+              ? (data.revenue_change || 0).toFixed(2)
+              : data.revenue_change || 0,
+          ),
+          period: "month",
+        },
+        active_customers: {
+          value: parseInt(data.current_customers) || 0,
+          change: parseFloat(
+            (data.customers_change || 0).toFixed
+              ? (data.customers_change || 0).toFixed(2)
+              : data.customers_change || 0,
+          ),
+          period: "month",
+        },
+        active_subscriptions: {
+          value: parseInt(data.current_subscriptions) || 0,
+          change: parseFloat(
+            (data.subscriptions_change || 0).toFixed
+              ? (data.subscriptions_change || 0).toFixed(2)
+              : data.subscriptions_change || 0,
+          ),
+          period: "month",
+        },
+        mrr: {
+          value: parseInt(data.current_mrr) || 0,
+          change: 0, // Would need historical MRR to calculate
+          period: "month",
+        },
+        churn_rate: {
+          value: parseFloat(
+            (data.churn_rate || 0).toFixed
+              ? (data.churn_rate || 0).toFixed(2)
+              : data.churn_rate || 0,
+          ),
+          change: 0, // Would need historical churn to calculate
+          period: "month",
+        },
+        failed_payments: {
+          value: parseInt(data.current_failed) || 0,
+          change: parseFloat(
+            (data.failed_change || 0).toFixed
+              ? (data.failed_change || 0).toFixed(2)
+              : data.failed_change || 0,
+          ),
+          period: "month",
+        },
+      },
+      period_start: new Date(
+        Date.now() - 30 * 24 * 60 * 60 * 1000,
+      ).toISOString(),
+      period_end: new Date().toISOString(),
+    });
+  }),
 
-    /**
-     * GET /api/dashboard/recent-transactions
-     * Get recent payment transactions
-     */
-    getRecentTransactions: asyncHandler(async (req, res) => {
-        const db = getDBConnection();
-        const userId = req.user.id;
-        const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+  /**
+   * GET /api/dashboard/recent-transactions
+   * Get recent payment transactions
+   */
+  getRecentTransactions: asyncHandler(async (req, res) => {
+    const db = getDBConnection();
+    const userId = req.user.id;
+    const limit = Math.min(parseInt(req.query.limit) || 10, 50);
 
-        const transactionsQuery = `
+    const transactionsQuery = `
             SELECT
                 i.id,
                 c.id as customer_id,
@@ -182,8 +203,8 @@ export const dashboardController = {
                     WHEN i.status = 'paid' THEN 'succeeded'
                     WHEN i.payment_failed_at IS NOT NULL THEN 'failed'
                     WHEN i.status = 'open' THEN 'pending'
-                    ELSE i.status
-                END as status,
+                    ELSE i.status::text
+                END::text as status,
                 CASE
                     WHEN i.status = 'paid' THEN 'Payment successful'
                     WHEN i.payment_failed_at IS NOT NULL THEN 'Payment failed - Retry #' || i.retry_count
@@ -200,24 +221,24 @@ export const dashboardController = {
             LIMIT $2
         `;
 
-        const result = await db.query(transactionsQuery, [userId, limit]);
+    const result = await db.query(transactionsQuery, [userId, limit]);
 
-        sendSuccess(res, STATUS.OK, {
-            transactions: result.rows,
-            total: result.rowCount,
-        });
-    }),
+    sendSuccess(res, STATUS.OK, {
+      transactions: result.rows,
+      total: result.rowCount,
+    });
+  }),
 
-    /**
-     * GET /api/dashboard/revenue-trends
-     * Get revenue trends over time
-     */
-    getRevenueTrends: asyncHandler(async (req, res) => {
-        const db = getDBConnection();
-        const userId = req.user.id;
-        const months = Math.min(parseInt(req.query.months) || 6, 24);
+  /**
+   * GET /api/dashboard/revenue-trends
+   * Get revenue trends over time
+   */
+  getRevenueTrends: asyncHandler(async (req, res) => {
+    const db = getDBConnection();
+    const userId = req.user.id;
+    const months = Math.min(parseInt(req.query.months) || 6, 24);
 
-        const trendsQuery = `
+    const trendsQuery = `
             WITH month_series AS (
                 SELECT
                     TO_CHAR(DATE_TRUNC('month', NOW() - (n || ' months')::interval), 'YYYY-MM') as period,
@@ -263,27 +284,27 @@ export const dashboardController = {
             ORDER BY ms.period ASC
         `;
 
-        const result = await db.query(trendsQuery, [userId, months]);
+    const result = await db.query(trendsQuery, [userId, months]);
 
-        // Calculate summary
-        const totalRevenue = result.rows.reduce((sum, row) => sum + parseInt(row.revenue), 0);
-        const avgRevenue = Math.round(totalRevenue / months);
+    // Calculate summary
+    const totalRevenue = result.rows.reduce(
+      (sum, row) => sum + parseInt(row.revenue),
+      0,
+    );
+    const avgRevenue = Math.round(totalRevenue / months);
 
-        const firstMonth = result.rows[0]?.revenue || 0;
-        const lastMonth = result.rows[result.rows.length - 1]?.revenue || 0;
-        const growthRate = firstMonth > 0
-            ? ((lastMonth - firstMonth) / firstMonth * 100)
-            : 0;
+    const firstMonth = result.rows[0]?.revenue || 0;
+    const lastMonth = result.rows[result.rows.length - 1]?.revenue || 0;
+    const growthRate =
+      firstMonth > 0 ? ((lastMonth - firstMonth) / firstMonth) * 100 : 0;
 
-        sendSuccess(res, STATUS.OK, {
-            trends: result.rows,
-            summary: {
-                total_revenue: totalRevenue,
-                average_revenue_per_month: avgRevenue,
-                growth_rate: parseFloat(growthRate.toFixed(2)),
-            },
-        });
-    }),
+    sendSuccess(res, STATUS.OK, {
+      trends: result.rows,
+      summary: {
+        total_revenue: totalRevenue,
+        average_revenue_per_month: avgRevenue,
+        growth_rate: parseFloat(growthRate.toFixed(2)),
+      },
+    });
+  }),
 };
-
-

@@ -115,3 +115,165 @@ export const markEmailAsVerified = async (userId) => {
     throw err;
   }
 };
+
+/**
+ * Creates a secure password reset token for a user
+ * @param {string} email - User's email address
+ * @param {object} client - Optional database client for transaction management
+ * @returns {Promise<string>} Raw token to be sent via email
+ */
+export const createPasswordResetToken = async (email, client = null) => {
+  const db = client || getDBConnection();
+  const useTransaction = !client;
+
+  try {
+    if (useTransaction) await db.query("BEGIN");
+
+    // Check if user exists
+    const userResult = await db.query("SELECT id FROM users WHERE email = $1", [
+      email,
+    ]);
+
+    if (userResult.rowCount === 0) {
+      // Don't reveal if email exists - throw generic error
+      if (useTransaction) await db.query("ROLLBACK");
+      throw new Error("If this email exists, a reset link will be sent.");
+    }
+
+    const userId = userResult.rows[0].id;
+
+    // Invalidate any existing password reset tokens for this user
+    await db.query("DELETE FROM password_resets WHERE user_id = $1", [userId]);
+
+    // Generate cryptographically secure random token
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
+
+    // Token expires in 1 hour
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    // Store hashed token in database
+    await db.query(
+      `INSERT INTO password_resets (user_id, token, expires_at, used)
+       VALUES ($1, $2, $3, $4)`,
+      [userId, hashedToken, expiresAt, false],
+    );
+
+    if (useTransaction) await db.query("COMMIT");
+
+    logger.info(`[PASSWORD RESET TOKEN] Token created for user: ${userId}`);
+
+    // Return raw token (to be sent via email)
+    return rawToken;
+  } catch (err) {
+    if (useTransaction) await db.query("ROLLBACK");
+    logger.error("[PASSWORD RESET TOKEN ERROR] Token creation error: ", {
+      error: err.message,
+    });
+    throw err;
+  }
+};
+
+/**
+ * Verifies a password reset token
+ * @param {string} token - Raw token from email link
+ * @returns {Promise<string|null>} User ID if valid, null otherwise
+ */
+export const verifyPasswordResetToken = async (token) => {
+  const db = getDBConnection();
+
+  try {
+    // Hash the provided token to compare with stored hash
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const result = await db.query(
+      `SELECT user_id, expires_at, used
+       FROM password_resets
+       WHERE token = $1`,
+      [hashedToken],
+    );
+
+    if (result.rowCount === 0) {
+      logger.warn("[PASSWORD RESET] Invalid token provided");
+      return null;
+    }
+
+    const { user_id, expires_at, used } = result.rows[0];
+
+    // Check if token has already been used
+    if (used) {
+      logger.warn(`[PASSWORD RESET] Token already used for user: ${user_id}`);
+      return null;
+    }
+
+    // Check if token has expired
+    if (new Date() > new Date(expires_at)) {
+      logger.warn(`[PASSWORD RESET] Expired token for user: ${user_id}`);
+      return null;
+    }
+
+    return user_id;
+  } catch (err) {
+    logger.error("[PASSWORD RESET VERIFICATION ERROR] ", {
+      error: err.message,
+    });
+    throw new Error("Failed to verify password reset token");
+  }
+};
+
+/**
+ * Marks a password reset token as used and updates the user's password
+ * @param {string} token - Raw token from email link
+ * @param {string} newPasswordHash - New hashed password
+ * @returns {Promise<boolean>} Success status
+ */
+export const resetPassword = async (token, newPasswordHash) => {
+  const db = getDBConnection();
+
+  await db.query("BEGIN");
+
+  try {
+    // Verify token and get user ID
+    const userId = await verifyPasswordResetToken(token);
+
+    if (!userId) {
+      await db.query("ROLLBACK");
+      return false;
+    }
+
+    // Update user's password
+    await db.query("UPDATE users SET password_hash = $1 WHERE id = $2", [
+      newPasswordHash,
+      userId,
+    ]);
+
+    // Mark token as used
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    await db.query("UPDATE password_resets SET used = TRUE WHERE token = $1", [
+      hashedToken,
+    ]);
+
+    // Delete old password reset tokens for this user
+    await db.query(
+      "DELETE FROM password_resets WHERE user_id = $1 AND token != $2",
+      [userId, hashedToken],
+    );
+
+    await db.query("COMMIT");
+
+    logger.info(
+      `[PASSWORD RESET] Password successfully reset for user: ${userId}`,
+    );
+    return true;
+  } catch (err) {
+    await db.query("ROLLBACK");
+    logger.error("[PASSWORD RESET ERROR] ", {
+      error: err.message,
+    });
+    throw err;
+  }
+};

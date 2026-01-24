@@ -14,6 +14,8 @@ import {
   verifyEmailToken,
   markEmailAsVerified,
   sendPasswordResetEmail,
+  createPasswordResetToken,
+  resetPassword,
 } from "../service/emailVerification.service.js";
 import { logger } from "../utils/logger.js";
 
@@ -41,7 +43,8 @@ export const authController = {
         return res.status(400).json({ message: "Invalid email format." });
       }
 
-      if(password !== confirmPassword) return res.status(400).json({ message: "Passwords do not match." });
+      if (password !== confirmPassword)
+        return res.status(400).json({ message: "Passwords do not match." });
 
       if (!validatePassword(password)) {
         return res.status(400).json({
@@ -154,38 +157,14 @@ export const authController = {
   },
 
   logout: (req, res) => {
-    if (!req.isAuthenticated())
+    if (!req.user) {
       return res.status(400).json({ message: "Not authenticated." });
+    }
 
     const { id } = req.user;
 
-    req.logout((err) => {
-      if (err) {
-        logger.error("[LOGOUT ERROR] Logout error: ", {
-          error: err.message || err.toString(),
-        });
-        return res.status(500).json({ message: "Logout failed." });
-      }
-
-      req.session.destroy((err) => {
-        if (err) {
-          logger.error("[SESSION DESTRUCTION] Session destruction error: ", {
-            error: err.message || err.toString(),
-          });
-          return res.status(500).json({ message: "Logout failed." });
-        }
-      });
-
-      res.clearCookie("connect.sid", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-      });
-      res.clearCookie("jwt");
-
-      logger.info(`[LOGOUT] User logged out: ${id}`);
-      return res.status(200).json({ message: "Logout successful." });
-    });
+    logger.info(`[LOGOUT] User logged out: ${id}`);
+    return res.status(200).json({ message: "Logout successful." });
   },
 
   verifyEmail: async (req, res) => {
@@ -219,20 +198,77 @@ export const authController = {
     if (!email || !validateEmail(email)) {
       return res.status(400).json({ message: "Invalid email address." });
     }
+
     try {
-      // TODO: Implement createPasswordResetToken function
-      const token = "temporary-token-placeholder";
+      // Create secure password reset token
+      const token = await createPasswordResetToken(email);
+
+      // Send password reset email
       await sendPasswordResetEmail(email, token);
-      logger.info(`Password reset email sent to: ${email}`);
-      return res.json({ message: "Password reset email sent." });
+
+      logger.info(`[PASSWORD RESET] Password reset email sent to: ${email}`);
+
+      // Always return success to prevent email enumeration attacks
+      return res.status(200).json({
+        message:
+          "If an account exists with this email, a password reset link has been sent.",
+      });
     } catch (err) {
-      logger.error("Password reset email error: ", {
+      logger.error("[PASSWORD RESET ERROR] Password reset error: ", {
         email: email.replace(/(.{3}).*(@.*)/, "$1***$2"),
         error: err.message,
       });
-      return res
-        .status(500)
-        .json({ message: "Error sending password reset email." });
+
+      // Return generic success message even on error to prevent email enumeration
+      return res.status(200).json({
+        message:
+          "If an account exists with this email, a password reset link has been sent.",
+      });
+    }
+  },
+
+  resetPasswordHandler: async (req, res) => {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        message: "Token and new password are required.",
+      });
+    }
+
+    if (!validatePassword(newPassword)) {
+      return res.status(400).json({
+        message:
+          "Password must be at least 8 characters and include mixed case + number.",
+      });
+    }
+
+    try {
+      // Hash the new password
+      const hashedPassword = await hashPassword(newPassword);
+
+      // Reset password using token
+      const success = await resetPassword(token, hashedPassword);
+
+      if (!success) {
+        return res.status(400).json({
+          message: "Invalid or expired reset token.",
+        });
+      }
+
+      logger.info("[PASSWORD RESET] Password successfully reset");
+
+      return res.status(200).json({
+        message: "Password has been reset successfully.",
+      });
+    } catch (err) {
+      logger.error("[PASSWORD RESET HANDLER ERROR] ", {
+        error: err.message,
+      });
+
+      return res.status(500).json({
+        message: "Failed to reset password. Please try again later.",
+      });
     }
   },
 };

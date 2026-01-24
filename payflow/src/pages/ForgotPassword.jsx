@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Logo from "../assets/logo.jpeg";
 import { validateEmail } from "../utils/validation";
+import { authAPI } from "../api/auth.api";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -23,25 +24,20 @@ const ForgotPassword = () => {
     }
 
     try {
-      const response = await fetch("/auth/forgot-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
+      const response = await authAPI.forgotPassword(email);
 
-      if (response.ok) {
+      if (response.status === 200) {
         setMessage(
           "Password reset link sent successfully! Please check your email.",
         );
         setEmailSent(true);
-      } else {
-        setError("Error sending password reset email. Please try again later.");
       }
     } catch (err) {
       console.error("Error:", err);
-      setError("An unexpected error occurred. Please try again later.");
+      setError(
+        err.response?.data?.message ||
+          "An unexpected error occurred. Please try again later.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -120,17 +116,16 @@ const ForgotPassword = () => {
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 20 20"
                     fill="currentColor"
-                    >
+                  >
                     <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                        clipRule="evenodd"
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
                     />
-                    </svg>
-                    <span>{message}</span>
+                  </svg>
+                  <span>{message}</span>
                 </div>
-              ) : null
-              }
+              ) : null}
 
               <form
                 method="POST"

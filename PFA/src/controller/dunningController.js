@@ -1,38 +1,47 @@
 import { getDBConnection } from "../db/connection.js";
-import { ErrorResponses, sendSuccess, STATUS, asyncHandler } from "../utils/errorHandler.js";
+import {
+  ErrorResponses,
+  sendSuccess,
+  STATUS,
+  asyncHandler,
+} from "../utils/errorHandler.js";
 
 export const dunningController = {
+  /**
+   * GET /api/dunning
+   * Get dunning cases (failed payments requiring action)
+   * Query params: status (open|resolved|all), page, limit
+   */
+  getDunning: asyncHandler(async (req, res) => {
+    const db = getDBConnection();
+    const userId = req.user.id;
 
-    /**
-     * GET /api/dunning
-     * Get dunning cases (failed payments requiring action)
-     * Query params: status (open|resolved|all), page, limit
-     */
-    getDunning: asyncHandler(async (req, res) => {
-        const db = getDBConnection();
-        const userId = req.user.id;
+    // Parse query parameters
+    const status = req.query.status || "open";
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = (page - 1) * limit;
 
-        // Parse query parameters
-        const status = req.query.status || 'open';
-        const page = Math.max(parseInt(req.query.page) || 1, 1);
-        const limit = Math.min(parseInt(req.query.limit) || 20, 100);
-        const offset = (page - 1) * limit;
+    // Validate status parameter
+    if (!["open", "resolved", "all"].includes(status)) {
+      return ErrorResponses.badRequest(
+        res,
+        "Invalid status. Must be one of: open, resolved, all",
+      );
+    }
 
-        // Validate status parameter
-        if (!['open', 'resolved', 'all'].includes(status)) {
-            return ErrorResponses.badRequest(res, 'Invalid status. Must be one of: open, resolved, all');
-        }
+    // Build status filter
+    let statusFilter = "";
+    if (status === "open") {
+      statusFilter =
+        "AND i.payment_failed_at IS NOT NULL AND i.status != 'paid'";
+    } else if (status === "resolved") {
+      statusFilter =
+        "AND i.status = 'paid' AND i.payment_failed_at IS NOT NULL";
+    }
 
-        // Build status filter
-        let statusFilter = '';
-        if (status === 'open') {
-            statusFilter = "AND i.payment_failed_at IS NOT NULL AND i.status != 'paid'";
-        } else if (status === 'resolved') {
-            statusFilter = "AND i.status = 'paid' AND i.payment_failed_at IS NOT NULL";
-        }
-
-        // Get dunning cases
-        const dunningQuery = `
+    // Get dunning cases
+    const dunningQuery = `
             SELECT
                 i.id,
                 c.id as customer_id,
@@ -81,10 +90,10 @@ export const dunningController = {
             LIMIT $2 OFFSET $3
         `;
 
-        const dunningResult = await db.query(dunningQuery, [userId, limit, offset]);
+    const dunningResult = await db.query(dunningQuery, [userId, limit, offset]);
 
-        // Get total count for pagination
-        const countQuery = `
+    // Get total count for pagination
+    const countQuery = `
             SELECT COUNT(*) as total
             FROM invoices i
             JOIN subscriptions s ON i.subscription_id = s.id
@@ -93,11 +102,11 @@ export const dunningController = {
             ${statusFilter}
         `;
 
-        const countResult = await db.query(countQuery, [userId]);
-        const total = parseInt(countResult.rows[0].total);
+    const countResult = await db.query(countQuery, [userId]);
+    const total = parseInt(countResult.rows[0].total);
 
-        // Get summary statistics
-        const summaryQuery = `
+    // Get summary statistics
+    const summaryQuery = `
             SELECT
                 COUNT(*) FILTER (
                     WHERE i.payment_failed_at IS NOT NULL
@@ -116,22 +125,26 @@ export const dunningController = {
             WHERE c.user_id = $1
         `;
 
-        const summaryResult = await db.query(summaryQuery, [userId]);
-        const summary = summaryResult.rows[0];
+    const summaryResult = await db.query(summaryQuery, [userId]);
+    const summary = summaryResult.rows[0];
 
-        sendSuccess(res, STATUS.OK, {
-            dunning_cases: dunningResult.rows,
-            pagination: {
-                page,
-                limit,
-                total,
-                total_pages: Math.ceil(total / limit),
-            },
-            summary: {
-                total_open: parseInt(summary.total_open),
-                total_amount_at_risk: parseInt(summary.total_amount_at_risk),
-                avg_retry_count: parseFloat(summary.avg_retry_count.toFixed(2)),
-            },
-        });
-    }),
+    sendSuccess(res, STATUS.OK, {
+      dunning_cases: dunningResult.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        total_pages: Math.ceil(total / limit),
+      },
+      summary: {
+        total_open: parseInt(summary.total_open) || 0,
+        total_amount_at_risk: parseInt(summary.total_amount_at_risk) || 0,
+        avg_retry_count: parseFloat(
+          (summary.avg_retry_count || 0).toFixed
+            ? (summary.avg_retry_count || 0).toFixed(2)
+            : summary.avg_retry_count || 0,
+        ),
+      },
+    });
+  }),
 };

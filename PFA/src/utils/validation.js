@@ -13,8 +13,8 @@ export const validateEmail = (email) => {
 };
 
 export const validatePassword = (password) => {
-    if(!password || password.length < 8 || password.length > 128) return false;
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if(!password || password.length < 6 || password.length > 128) return false;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
     return passwordRegex.test(password.trim());
 };
 

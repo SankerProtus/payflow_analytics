@@ -32,8 +32,6 @@ const Signup = () => {
       confirmPassword: event.target.confirmPassword.value,
     };
 
-    console.log("Signup form data:", formData);
-
     // Validation
     if (
       !formData.companyName ||

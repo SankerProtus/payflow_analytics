@@ -7,7 +7,12 @@ import { storage } from "../utils/localStorage";
 export const useAuth = () => {
   const navigate = useNavigate();
   const context = useContext(AuthContext);
-  const { setUser } = context || {};
+
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+
+  const { user, setUser, isAuthenticated } = context;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -63,6 +68,9 @@ export const useAuth = () => {
   };
 
   return {
+    user,
+    setUser,
+    isAuthenticated,
     signup,
     login,
     logout,

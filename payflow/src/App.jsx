@@ -10,6 +10,7 @@ import CustomerDetail from "./pages/CustomerDetail";
 import Dunning from "./pages/Dunning";
 import Loader from "./components/common/Loader";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import VerifyAccount from "./pages/VerifyAccount";
 
 // Protected Route Component
@@ -59,6 +60,14 @@ function AppRoutes() {
         element={
           <PublicRoute>
             <ForgotPassword />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/reset-password"
+        element={
+          <PublicRoute>
+            <ResetPassword />
           </PublicRoute>
         }
       />

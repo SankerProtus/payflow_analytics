@@ -124,8 +124,9 @@ authRoutes.post("/signup", authController.signup);
 authRoutes.post("/login", loginLimiter, authController.login);
 authRoutes.get("/google", authController.googleAuthController);
 authRoutes.get("/google/secrets", authController.googleAuthCallback);
-authRoutes.post("/logout", authController.logout);
+authRoutes.post("/logout", authMiddleware, authController.logout);
 authRoutes.post("/forgot-password", authController.passwordReset);
+authRoutes.post("/reset-password", authController.resetPasswordHandler);
 authRoutes.post("/verify", authController.verifyEmail);
 authRoutes.post("/verify-email", authController.verifyEmail);
 authRoutes.post("/refresh-token", authMiddleware, (req, res) => {
