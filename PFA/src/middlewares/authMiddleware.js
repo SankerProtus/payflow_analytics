@@ -14,16 +14,16 @@ export const authMiddleware = (req, res, next) => {
             return res.status(500).json({ message: 'Internal server error' });
         }
 
-        const token = authHeader.substring(7);
+        const token = authHeader.split(' ')[1];
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
+
         // Structure user object consistently
         req.user = {
             id: decoded.id,
             email: decoded.email,
             companyName: decoded.companyName || null,
         };
-        
+
         next();
     } catch (error) {
         if (error.name === 'TokenExpiredError') {

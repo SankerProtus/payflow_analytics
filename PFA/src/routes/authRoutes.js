@@ -127,8 +127,8 @@ authRoutes.get("/google/secrets", authController.googleAuthCallback);
 authRoutes.post("/logout", authMiddleware, authController.logout);
 authRoutes.post("/forgot-password", authController.passwordReset);
 authRoutes.post("/reset-password", authController.resetPasswordHandler);
-authRoutes.post("/verify", authController.verifyEmail);
 authRoutes.post("/verify-email", authController.verifyEmail);
+authRoutes.post("/resend-verification", authController.resendVerificationEmail);
 authRoutes.post("/refresh-token", authMiddleware, (req, res) => {
   res.json({ accessToken: req.accessToken });
 });

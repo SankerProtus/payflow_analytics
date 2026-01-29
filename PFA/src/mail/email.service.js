@@ -10,10 +10,12 @@ export const sendEmail = async ({ to, subject, html }) => {
       html,
     };
     const info = await transporter.sendMail(mailOptions);
-    logger.info(`[EMAIL SENT] Email sent to ${to}:`, info)
+    const emailPrefix = to.replace(/(.{3}).*(@.*)/, "$1******$2");
+    logger.info(`[EMAIL SENT] Email sent to ${emailPrefix}:`, info)
     return info;
   } catch (error) {
-      logger.error(`[EMAIL SENDING ERROR] Failed to send email to ${to}:`, error.message);
+    const emailPrefix = to.replace(/(.{3}).*(@.*)/, "$1******$2");
+      logger.error(`[EMAIL SENDING ERROR] Failed to send email to ${emailPrefix}:`, error.message);
       throw new Error(`Email delivery failed: ${error.message}`);
   }
 };

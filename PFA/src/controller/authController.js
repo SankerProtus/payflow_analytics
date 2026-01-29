@@ -63,13 +63,14 @@ export const authController = {
         return res.status(400).json({ message: "Account already exists." });
       }
 
+      //  Hash password
       const hashed = await hashPassword(password);
 
       await client.query("BEGIN");
 
       const insertResult = await client.query(
-        `INSERT INTO users (email, password_hash, company_name) VALUES ($1, $2, $3) RETURNING id, email, company_name`,
-        [email, hashed, companyName],
+        `INSERT INTO users (email, password_hash, company_name, isVerified) VALUES ($1, $2, $3, $4) RETURNING id, email, company_name`,
+        [email, hashed, companyName, false],
       );
 
       const user = insertResult.rows[0];
@@ -79,7 +80,10 @@ export const authController = {
       try {
         await sendVerificationEmail(email, token);
         await client.query("COMMIT");
-        logger.info(`[VERIFY EMAIL] Verification email sent to: ${email}`);
+        const emailPrefix = email.replace(/(.{3}).*(@.*)/, "$1******$2");
+        logger.info(
+          `[VERIFY EMAIL] Verification email sent to: ${emailPrefix}`,
+        );
       } catch (emailErr) {
         await client.query("ROLLBACK");
         logger.error("[EMAIL SENDING ERROR] Email sending error: ", {
@@ -110,28 +114,108 @@ export const authController = {
     }
   },
 
-  login: (req, res, next) => {
-    req.body.email = sanitizeEmail(req.body?.email);
-    passport.authenticate("local", { session: false }, (err, user, info) => {
-      if (err) return next(err);
+  login: async (req, res, next) => {
+    try {
+      req.body.email = sanitizeEmail(req.body?.email);
+      const db = getDBConnection();
+      const email = req.body.email;
+      const ipAddress = req.ip || req.connection.remoteAddress;
 
-      if (!user)
-        return res.status(400).json({
-          message: info?.message || "Login failed. Please try again.",
+      // Check for failed attempts in the last 15 minutes
+      const checkAttempts = await db.query(
+        `SELECT COUNT(*) as count
+         FROM failed_login_attempts
+         WHERE ip_address = $1
+         AND attempt_time > NOW() - INTERVAL '15 minutes'`,
+        [ipAddress],
+      );
+
+      const failedAttempts = parseInt(checkAttempts.rows[0].count, 10);
+
+      if (failedAttempts >= 5) {
+        logger.warn(
+          `[LOGIN BLOCKED] Too many failed attempts from IP: ${ipAddress}`,
+        );
+        return res.status(429).json({
+          message:
+            "Too many failed login attempts. Please try again in 15 minutes.",
         });
+      }
 
-      const token = generateToken(user);
+      passport.authenticate(
+        "local",
+        { session: false },
+        async (err, user, info) => {
+          if (err) return next(err);
 
-      return res.status(200).json({
-        message: "Login successful. Redirecting to dashboard...",
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          companyName: user.companyName || null,
+          if (!user) {
+            // Record failed login attempt
+            try {
+              // Try to find user by email to get user_id
+              const userQuery = await db.query(
+                "SELECT id FROM users WHERE LOWER(email) = $1",
+                [email.toLowerCase()],
+              );
+
+              const userId =
+                userQuery.rowCount > 0 ? userQuery.rows[0].id : null;
+
+              await db.query(
+                `INSERT INTO failed_login_attempts (user_id, ip_address, attempt_time)
+               VALUES ($1, $2, NOW())`,
+                [userId, ipAddress],
+              );
+
+              logger.warn(
+                `[FAILED LOGIN] Failed login attempt for email: ${email.replace(/(.{3}).*(@.*)/, "$1******$2")} from IP: ${ipAddress}`,
+              );
+            } catch (insertErr) {
+              logger.error("[FAILED LOGIN TRACKING ERROR]", {
+                error: insertErr.message,
+              });
+            }
+
+            return res.status(400).json({
+              message: info?.message || "Login failed. Please try again.",
+            });
+          }
+
+          // Successful login - clear failed attempts for this IP and user
+          try {
+            await db.query(
+              `DELETE FROM failed_login_attempts
+             WHERE ip_address = $1 OR user_id = $2`,
+              [ipAddress, user.id],
+            );
+          } catch (deleteErr) {
+            logger.error("[CLEAR FAILED ATTEMPTS ERROR]", {
+              error: deleteErr.message,
+            });
+          }
+
+          const token = generateToken(user);
+
+          logger.info(
+            `[LOGIN SUCCESS] User logged in: ${user.email.replace(/(.{3}).*(@.*)/, "$1******$2")}`,
+          );
+
+          return res.status(200).json({
+            message: "Login successful. Redirecting to dashboard...",
+            token,
+            user: {
+              id: user.id,
+              email: user.email,
+              companyName: user.companyName || null,
+            },
+          });
         },
+      )(req, res, next);
+    } catch (err) {
+      logger.error("[LOGIN ERROR]", { error: err.message });
+      return res.status(500).json({
+        message: "An error occurred during login. Please try again later.",
       });
-    })(req, res, next);
+    }
   },
 
   googleAuthController: passport.authenticate("google", {
@@ -193,6 +277,48 @@ export const authController = {
     return res.status(200).json({ message: "Email successfully verified." });
   },
 
+  resendVerificationEmail: async (req, res) => {
+    const email = sanitizeEmail(req.body?.email);
+    if (!email || !validateEmail(email)) {
+      return res.status(400).json({ message: "Invalid email address." });
+    }
+    try {
+      const db = getDBConnection();
+      const client = await db.connect();
+      const userResult = await client.query(
+        "SELECT id, isVerified FROM users WHERE email = $1",
+        [email],
+      );
+      if (userResult.rowCount === 0) {
+        return res
+          .status(200)
+          .json({ message: "Verification email resent if account exists." });
+      }
+      const user = userResult.rows[0];
+
+      if (user.isverified) {
+        return res.status(400).json({ message: "Email is already verified." });
+      }
+      const token = await createEmailVerificationToken(user.id, client);
+      await sendVerificationEmail(email, token);
+      const emailPrefix = email.replace(/(.{3}).*(@.*)/, "$1******$2");
+      logger.info(
+        `[RESEND VERIFY EMAIL] Verification email resent to: ${emailPrefix}`,
+      );
+      return res
+        .status(200)
+        .json({ message: "Verification email resent if account exists." });
+    } catch (err) {
+      logger.error("[RESEND VERIFY EMAIL ERROR] Resend verification error: ", {
+        email: email.replace(/(.{3}).*(@.*)/, "$1***$2"),
+        error: err.message,
+      });
+      return res.status(500).json({
+        message: "Error resending verification email. Please try again later.",
+      });
+    }
+  },
+
   passwordReset: async (req, res) => {
     const email = sanitizeEmail(req.body?.email);
     if (!email || !validateEmail(email)) {
@@ -206,9 +332,10 @@ export const authController = {
       // Send password reset email
       await sendPasswordResetEmail(email, token);
 
-      logger.info(`[PASSWORD RESET] Password reset email sent to: ${email}`);
+      logger.info(
+        `[PASSWORD RESET] Password reset email sent to: ${email.replace(/(.{3}).*(@.*)/, "$1******$2")}`,
+      );
 
-      // Always return success to prevent email enumeration attacks
       return res.status(200).json({
         message:
           "If an account exists with this email, a password reset link has been sent.",
@@ -219,7 +346,6 @@ export const authController = {
         error: err.message,
       });
 
-      // Return generic success message even on error to prevent email enumeration
       return res.status(200).json({
         message:
           "If an account exists with this email, a password reset link has been sent.",
@@ -257,6 +383,10 @@ export const authController = {
       }
 
       logger.info("[PASSWORD RESET] Password successfully reset");
+
+      await db.query("DELETE FROM password_reset_tokens WHERE token = $1", [
+        token,
+      ]);
 
       return res.status(200).json({
         message: "Password has been reset successfully.",

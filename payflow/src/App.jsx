@@ -58,9 +58,7 @@ function AppRoutes() {
       <Route
         path="/forgot-password"
         element={
-          <PublicRoute>
-            <ForgotPassword />
-          </PublicRoute>
+          <ForgotPassword />
         }
       />
       <Route

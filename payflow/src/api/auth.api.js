@@ -22,11 +22,11 @@ export const authAPI = {
   },
 
   verifyEmail: (token) => {
-    return api.post("/auth/verify", { token });
+    return api.post("/auth/verify-email", { token });
   },
 
   resendVerification: (email) => {
-    return api.post("/auth/verify-email", { email });
+    return api.post("/auth/resend-verification", { email });
   },
 
   forgotPassword: (email) => {

@@ -67,6 +67,21 @@ export const useAuth = () => {
     }
   };
 
+  const verifyEmail = async (token) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      await authAPI.verifyEmail(token);
+    }
+    catch (err) {
+      setError(err.response?.data?.message || "Email verification failed");
+    }
+    finally {
+      setLoading(false);
+    }
+  };
+
   return {
     user,
     setUser,
@@ -74,6 +89,7 @@ export const useAuth = () => {
     signup,
     login,
     logout,
+    verifyEmail,
     loading,
     error,
   };

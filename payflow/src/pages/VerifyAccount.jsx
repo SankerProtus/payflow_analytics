@@ -1,52 +1,44 @@
-import { useState, useEffect, useCallback } from "react";
-import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { useState, useRef } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { authAPI } from "../api/auth.api";
 import { Loader } from "lucide-react";
 import Logo from "../assets/logo.jpeg";
 
 const VerifyAccount = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const [verificationToken, setVerificationToken] = useState("");
+  const [code, setCode] = useState(["", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-
-  const verifyToken = useCallback(
-    async (token) => {
-      setIsLoading(true);
-      setError("");
-      setMessage("");
-
-      try {
-        await authAPI.verifyEmail(token);
-        setMessage("Account verified successfully! Redirecting to login...");
-        setTimeout(() => navigate("/login"), 2000);
-      } catch (err) {
-        console.error("Error:", err);
-        setError(
-          err.response?.data?.message ||
-            "Invalid or expired verification token. Please try again.",
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [navigate],
-  );
-
-  useEffect(() => {
-    const tokenFromUrl = searchParams.get("token");
-    if (tokenFromUrl) {
-      setVerificationToken(tokenFromUrl);
-      verifyToken(tokenFromUrl);
-    }
-  }, [searchParams, verifyToken]);
+  const inputRefs = useRef([]);
 
   const handleVerify = async (event) => {
     event.preventDefault();
-    verifyToken(verificationToken);
+
+    const verificationToken = code.join("");
+    if (!verificationToken || verificationToken.length !== 4) {
+      setError("Please enter a valid 4-digit verification code.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+    setMessage("");
+
+    try {
+      await authAPI.verifyEmail(verificationToken);
+      setMessage("Account verified successfully! Redirecting to login...");
+      setTimeout(() => navigate("/login"), 2000);
+    } catch (err) {
+      console.error("Error:", err);
+      setError(
+        err.response?.data?.message ||
+          "Invalid or expired verification code. Please try again.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleResend = async (event) => {
@@ -58,15 +50,75 @@ const VerifyAccount = () => {
 
     try {
       await authAPI.resendVerification(email);
-      setMessage("Verification email resent. Please check your inbox.");
+      setMessage(
+        "A new verification code has been sent to your email. Please check your inbox.",
+      );
     } catch (err) {
       console.error("Error:", err);
       setError(
         err.response?.data?.message ||
-          "Error resending verification email. Please try again later.",
+          "Error resending verification code. Please try again later.",
       );
     } finally {
       setIsResending(false);
+    }
+  };
+
+  const handleChange = (index, value) => {
+    // Only allow single digit
+    if (value.length > 1) {
+      value = value.slice(-1);
+    }
+
+    // Only allow numbers
+    if (value && !/^\d$/.test(value)) {
+      return;
+    }
+
+    const newCode = [...code];
+    newCode[index] = value;
+    setCode(newCode);
+
+    // Auto-focus next input
+    if (value && index < 3) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index, e) => {
+    // Handle backspace
+    if (e.key === "Backspace" && !code[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+
+    // Handle left arrow
+    if (e.key === "ArrowLeft" && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+
+    // Handle right arrow
+    if (e.key === "ArrowRight" && index < 3) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 4);
+
+    if (pastedData) {
+      const newCode = [...code];
+      for (let i = 0; i < pastedData.length; i++) {
+        newCode[i] = pastedData[i];
+      }
+      setCode(newCode);
+
+      // Focus the next empty input or last input
+      const nextIndex = Math.min(pastedData.length, 3);
+      inputRefs.current[nextIndex]?.focus();
     }
   };
 
@@ -111,8 +163,8 @@ const VerifyAccount = () => {
               Verify Your Account
             </h2>
             <p className="text-md text-gray-600 mt-2">
-              Please check your email for a verification link or enter the
-              verification token below to activate your account.
+              Please enter the 4-digit verification code sent to your email
+              address.
             </p>
           </div>
 
@@ -154,27 +206,34 @@ const VerifyAccount = () => {
 
           <form onSubmit={handleVerify} className="space-y-6">
             <div>
-              <label
-                htmlFor="token"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Verification Token
+              <label className="block text-sm font-medium text-gray-700 mb-4 text-center">
+                Verification Code
               </label>
-              <input
-                id="token"
-                name="token"
-                type="text"
-                placeholder="Enter your verification token"
-                value={verificationToken}
-                onChange={(e) => setVerificationToken(e.target.value)}
-                required
-                className="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-              />
+              <div className="flex justify-center gap-2 sm:gap-3">
+                {code.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => (inputRefs.current[index] = el)}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength="1"
+                    value={digit}
+                    onChange={(e) => handleChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    onPaste={handlePaste}
+                    className="w-12 h-12 sm:w-14 sm:h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                    autoFocus={index === 0}
+                  />
+                ))}
+              </div>
+              <p className="mt-4 text-xs text-gray-500 text-center">
+                Enter the 4-digit code from your email
+              </p>
             </div>
 
             <button
               type="submit"
-              disabled={isLoading || !verificationToken}
+              disabled={isLoading || code.join("").length !== 4}
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
@@ -195,7 +254,7 @@ const VerifyAccount = () => {
               </div>
               <div className="relative flex justify-center text-md">
                 <span className="px-2 bg-white text-gray-500 text-md">
-                  Didn't receive the email?
+                  Didn't receive the code?
                 </span>
               </div>
             </div>
@@ -215,7 +274,7 @@ const VerifyAccount = () => {
                 disabled={isResending}
                 className="w-full bg-white border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isResending ? "Resending..." : "Resend Verification Email"}
+                {isResending ? "Resending..." : "Resend Verification Code"}
               </button>
             </form>
           </div>

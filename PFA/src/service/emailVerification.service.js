@@ -10,33 +10,38 @@ import { logger } from "../utils/logger.js";
 export const createEmailVerificationToken = async (userId, client = null) => {
   const db = client || getDBConnection();
 
-  const rawToken = crypto.randomBytes(32).toString("hex");
-  const hashedToken = crypto
-    .createHash("sha256")
-    .update(rawToken)
-    .digest("hex");
+  // Generate a 4 digit numeric token
+  const token = Math.floor(1000 + Math.random() * 9000).toString();
+  const expiresAt = new Date(Date.now() + 20 * 60 * 1000); // 20 minutes from now
 
-  const expiresAt = new Date(Date.now() + 20 * 60 * 1000);
-
-  await db.query(
-    `INSERT INTO email_verifications (user_id, token, expires_at, used)
-     VALUES ($1, $2, $3, $4)`,
-    [userId, hashedToken, expiresAt, false],
-  );
-
-  return rawToken; // send ONLY raw token to email
+  try {
+    await db.query(
+      `INSERT INTO email_verifications (user_id, token, expires_at)
+       VALUES ($1, $2, $3)`,
+      [userId, token, expiresAt],
+    );
+    logger.info(
+      `[EMAIL VERIFICATION TOKEN] Token created for user ID: ${userId}`,
+    );
+    return token;
+  } catch (err) {
+    logger.error("[EMAIL VERIFICATION TOKEN ERROR] Token creation error: ", {
+      error: err.message,
+    });
+    throw err;
+  }
 };
 
 export const sendVerificationEmail = async (email, token) => {
   try {
-    const verificationLink = `${process.env.CLIENT_URL}/verify-account?token=${token}`;
     await sendEmail({
       to: email,
       subject: "PayFlow Analytics - Email Verification.",
-      html: verificationEmailTemplate(verificationLink),
+      html: verificationEmailTemplate(token),
     });
 
-    logger.info(`[VERIFY EMAIL] Verification email sent to: ${email}`);
+    const emailPrefix = email.replace(/(.{3}).*(@.*)/, "$1******$2");
+    logger.info(`[VERIFY EMAIL] Verification email sent to: ${emailPrefix}`);
   } catch (err) {
     logger.error("[EMAIL SENDING ERROR] Email sending error: ", {
       email: email.replace(/(.{3}).*(@.*)/, "$1******$2"),
@@ -49,21 +54,22 @@ export const sendVerificationEmail = async (email, token) => {
 
 export const sendPasswordResetEmail = async (toEmail, token) => {
   try {
-    const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
     await sendEmail({
       to: toEmail,
       subject: "PayFlow Analytics - Password Reset Request",
-      html: passwordResetEmailTemplate(resetLink),
+      html: passwordResetEmailTemplate(token),
     });
 
+    const emailPrefix = toEmail.replace(/(.{3}).*(@.*)/, "$1******$2");
     logger.info(
-      `[PASSWORD RESET EMAIL] Password reset email sent to: ${toEmail}`,
+      `[PASSWORD RESET EMAIL] Password reset email sent to: ${emailPrefix}`,
     );
   } catch (err) {
     logger.error("[EMAIL SENDING ERROR] Email sending error: ", {
       email: toEmail.replace(/(.{3}).*(@.*)/, "$1******$2"),
       error: err.message,
     });
+    throw err;
   }
 };
 
@@ -72,7 +78,7 @@ export const verifyEmailToken = async (token) => {
 
   try {
     const result = await db.query(
-      "SELECT user_id, expires_at FROM email_verification_tokens WHERE token = $1",
+      "SELECT user_id, expires_at FROM email_verifications WHERE token = $1",
       [token],
     );
 
@@ -95,7 +101,7 @@ export const markEmailAsVerified = async (userId) => {
   await db.query("BEGIN");
 
   try {
-    await db.query("UPDATE users SET is_email_verified = TRUE WHERE id = $1", [
+    await db.query("UPDATE users SET isVerified = TRUE WHERE id = $1", [
       userId,
     ]);
 
