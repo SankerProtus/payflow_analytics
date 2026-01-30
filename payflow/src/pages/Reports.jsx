@@ -235,15 +235,20 @@ const Reports = () => {
           </div>
           <div className="flex items-center gap-3">
             <Button
-              variant="outline"
+              className="flex items-center gap-1 hover:bg-gray-200 cursor-pointer"
               onClick={() => handleExport("csv")}
               disabled={loading}
             >
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="h-5 w-5 mr-2" />
               Export CSV
             </Button>
-            <Button onClick={() => handleExport("json")} disabled={loading}>
-              <Download className="h-4 w-4 mr-2" />
+            <Button
+              className="flex items-center gap-1 hover:bg-gray-200 cursor-pointer"
+              variant="outline"
+              onClick={() => handleExport("json")}
+              disabled={loading}
+            >
+              <Download className="h-5 w-5 mr-2" />
               Export JSON
             </Button>
           </div>

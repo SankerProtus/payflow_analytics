@@ -1118,7 +1118,24 @@ export const dashboardController = {
     const db = getDBConnection();
     const userId = req.user.id;
     const limit = Math.min(parseInt(req.query.limit) || 50, 200);
-    const days = Math.min(parseInt(req.query.days) || 7, 30);
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const offset = (page - 1) * limit;
+    const days = req.query.days ? Math.min(parseInt(req.query.days), 30) : null;
+
+    // Build date filter based on whether days is provided
+    const dateFilter = days
+      ? `AND c.created_at >= NOW() - ($4 || ' days')::interval`
+      : "";
+    const dateFilter2 = days
+      ? `AND sst.created_at >= NOW() - ($4 || ' days')::interval`
+      : "";
+    const dateFilter3 = days
+      ? `AND COALESCE(i.payment_failed_at, i.created_at) >= NOW() - ($4 || ' days')::interval`
+      : "";
+
+    const queryParams = days
+      ? [userId, limit, offset, days]
+      : [userId, limit, offset];
 
     const logsQuery = `
       WITH all_activities AS (
@@ -1130,7 +1147,7 @@ export const dashboardController = {
           jsonb_build_object('customer_id', c.id, 'email', c.email) as details
         FROM customers c
         WHERE c.user_id = $1
-          AND c.created_at >= NOW() - ($3 || ' days')::interval
+          ${dateFilter}
 
         UNION ALL
 
@@ -1150,7 +1167,7 @@ export const dashboardController = {
         JOIN subscriptions s ON sst.subscription_id = s.id
         JOIN customers c ON s.customer_id = c.id
         WHERE c.user_id = $1
-          AND sst.created_at >= NOW() - ($3 || ' days')::interval
+          ${dateFilter2}
 
         UNION ALL
 
@@ -1177,19 +1194,63 @@ export const dashboardController = {
         JOIN subscriptions s ON i.subscription_id = s.id
         JOIN customers c ON s.customer_id = c.id
         WHERE c.user_id = $1
-          AND COALESCE(i.payment_failed_at, i.created_at) >= NOW() - ($3 || ' days')::interval
+          ${dateFilter3}
       )
       SELECT *
       FROM all_activities
       ORDER BY timestamp DESC
-      LIMIT $2
+      LIMIT $2 OFFSET $3
     `;
 
-    const result = await db.query(logsQuery, [userId, limit, days]);
+    // Get total count for pagination
+    const countQuery = `
+      WITH all_activities AS (
+        SELECT c.created_at as timestamp
+        FROM customers c
+        WHERE c.user_id = $1
+          ${dateFilter}
+
+        UNION ALL
+
+        SELECT sst.created_at
+        FROM subscription_state_transitions sst
+        JOIN subscriptions s ON sst.subscription_id = s.id
+        JOIN customers c ON s.customer_id = c.id
+        WHERE c.user_id = $1
+          ${dateFilter2}
+
+        UNION ALL
+
+        SELECT COALESCE(i.payment_failed_at, i.created_at)
+        FROM invoices i
+        JOIN subscriptions s ON i.subscription_id = s.id
+        JOIN customers c ON s.customer_id = c.id
+        WHERE c.user_id = $1
+          ${dateFilter3}
+      )
+      SELECT COUNT(*) as total FROM all_activities
+    `;
+
+    const countParams = days ? [userId, days] : [userId];
+
+    const [result, countResult] = await Promise.all([
+      db.query(logsQuery, queryParams),
+      db.query(countQuery, countParams),
+    ]);
+
+    const totalCount = parseInt(countResult.rows[0]?.total || 0);
+    const totalPages = Math.ceil(totalCount / limit);
 
     sendSuccess(res, STATUS.OK, {
-      logs: result.rows,
-      total_count: result.rowCount,
+      activities: result.rows,
+      pagination: {
+        page,
+        limit,
+        total_count: totalCount,
+        total_pages: totalPages,
+        has_next: page < totalPages,
+        has_prev: page > 1,
+      },
       period_days: days,
     });
   }),
@@ -1345,6 +1406,16 @@ export const dashboardController = {
     sendSuccess(res, STATUS.OK, {
       message: "Notifications marked as read",
       marked_count: notification_ids?.length || 0,
+    });
+  }),
+
+  /**
+   * POST /api/dashboard/notifications/mark-all-read
+   * Mark all notifications as read
+   */
+  markAllNotificationsAsRead: asyncHandler(async (req, res) => {
+    sendSuccess(res, STATUS.OK, {
+      message: "All notifications marked as read",
     });
   }),
 

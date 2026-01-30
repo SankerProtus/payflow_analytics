@@ -30,7 +30,7 @@ COMMENT ON COLUMN notifications.priority IS 'Priority level: low, medium, high, 
 COMMENT ON COLUMN notifications.metadata IS 'Additional context data for the notification';
 
 -- =====================================================
--- 2. ACTIVITY_LOGS TABLE 
+-- 2. ACTIVITY_LOGS TABLE
 -- =====================================================
 CREATE TABLE IF NOT EXISTS activity_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

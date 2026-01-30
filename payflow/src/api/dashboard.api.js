@@ -66,6 +66,11 @@ export const dashboardAPI = {
     return api.get(`/dashboard/activity-logs?limit=${limit}&days=${days}`);
   },
 
+  getActivityLog: (pagination = {}) => {
+    const { page = 1, limit = 50 } = pagination;
+    return api.get(`/dashboard/activity-logs?page=${page}&limit=${limit}`);
+  },
+
   // System Health
   getSystemHealth: () => {
     return api.get("/dashboard/system-health");
@@ -117,5 +122,13 @@ export const dashboardAPI = {
     return api.post("/dashboard/notifications/mark-read", {
       notification_id: notificationId,
     });
+  },
+
+  markAllNotificationsAsRead: () => {
+    return api.post("/dashboard/notifications/mark-all-read");
+  },
+
+  deleteNotification: (notificationId) => {
+    return api.delete(`/dashboard/notifications/${notificationId}`);
   },
 };

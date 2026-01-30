@@ -6,6 +6,7 @@ import { useDunning } from "../hooks/useDunning";
 import Loader from "../components/common/Loader";
 import ErrorMessage from "../components/common/ErrorMessage";
 import { formatCurrency } from "../utils/formatCurrency";
+import { BanknoteX } from "lucide-react";
 
 const Dunning = () => {
   const { dunningList, groupedByRisk, loading, error, refetch } = useDunning();
@@ -28,8 +29,11 @@ const Dunning = () => {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 text-primary-600">Failed Payments</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-primary-600 flex items-center gap-2">
+            <BanknoteX className="h-10 w-10" />
+            Failed Payments
+          </h1>
+          <p className="text-gray-600 text-lg mt-1">
             Manage customers with payment issues to reduce churn
           </p>
         </div>

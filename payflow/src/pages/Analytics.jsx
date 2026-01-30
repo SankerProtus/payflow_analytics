@@ -79,7 +79,7 @@ const Analytics = () => {
               <Activity className="h-8 w-8" />
               Analytics Dashboard
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 text-lg mt-1">
               Deep insights into your business performance
             </p>
           </div>

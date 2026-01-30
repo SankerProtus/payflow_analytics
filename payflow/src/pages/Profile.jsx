@@ -4,13 +4,14 @@ import { User, Mail, Building2, Lock, ArrowLeft, Save, X } from "lucide-react";
 import Card from "../components/common/Card";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
-import Loader from "../components/common/Loader";
 import ErrorMessage from "../components/common/ErrorMessage";
 import Layout from "../components/layout/Layout";
 import { AuthContext } from "../context/AuthContext";
 import { getProfile, updateProfile, updatePassword } from "../api/auth.api";
 import { storage } from "../utils/localStorage";
 import { CircleUser } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
+import { Loader } from "lucide-react";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -148,7 +149,7 @@ const Profile = () => {
 
   const handleCancel = () => {
     if (activeTab === "profile") {
-      fetchProfile(); // Reset to original data
+      fetchProfile();
     } else {
       setPasswordData({
         currentPassword: "",
@@ -292,7 +293,12 @@ const Profile = () => {
                   placeholder="your.email@example.com"
                   required
                   disabled
-                  helperText="Email cannot be changed for security reasons"
+                  helperText={
+                    <span className="flex items-center text-red-600">
+                      Email cannot be changed for security reasons.
+                      <ShieldAlert className="ml-1 h-4 w-4 text-red-600" />
+                    </span>
+                  }
                 />
 
                 <Input
@@ -307,6 +313,7 @@ const Profile = () => {
 
                 <div className="flex justify-end gap-3 pt-4 border-t">
                   <Button
+                  className="flex items-center hover:cursor-pointer focus:outline-none"
                     type="button"
                     variant="outline"
                     onClick={handleCancel}
@@ -315,7 +322,7 @@ const Profile = () => {
                     <X className="h-4 w-4 mr-2" />
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={saving}>
+                  <Button type="submit" disabled={saving} className="flex items-center hover:cursor-pointer focus:outline-none">
                     {saving ? (
                       <>
                         <Loader size="sm" className="mr-2" />
@@ -364,7 +371,9 @@ const Profile = () => {
                   onChange={handlePasswordChange}
                   icon={Lock}
                   placeholder="Enter your new password"
-                  helperText="Must be at least 8 characters long"
+                  helperText={
+                    <span className="text-red-600">Must be at least 8 characters long</span>
+                  }
                   required
                 />
 
@@ -381,6 +390,7 @@ const Profile = () => {
 
                 <div className="flex justify-end gap-3 pt-4 border-t">
                   <Button
+                    className="flex items-center hover:cursor-pointer focus:outline-none"
                     type="button"
                     variant="outline"
                     onClick={handleCancel}
@@ -389,7 +399,7 @@ const Profile = () => {
                     <X className="h-4 w-4 mr-2" />
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={saving}>
+                  <Button type="submit" disabled={saving} className="flex items-center hover:cursor-pointer focus:outline-none">
                     {saving ? (
                       <>
                         <Loader size="sm" className="mr-2" />

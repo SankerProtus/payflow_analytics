@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Activity, Filter, Search, Eye } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import Card from "../components/common/Card";

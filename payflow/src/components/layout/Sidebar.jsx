@@ -25,7 +25,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 min-h-screen">
+    <aside className="w-64 bg-white border-r border-gray-200 overflow-y-auto">
       <nav className="p-4 space-y-2">
         {links.map((link) => (
           <NavLink

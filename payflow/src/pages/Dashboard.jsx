@@ -57,11 +57,11 @@ const Dashboard = () => {
               <LayoutDashboard className="h-8 w-8 text-primary-600" />
               Dashboard
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 mt-2 text-lg">
               Track your subscription metrics and revenue growth
             </p>
           </div>
-          <div className="text-sm text-gray-600">
+          <div className="text-md text-gray-600">
             {new Date().toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",

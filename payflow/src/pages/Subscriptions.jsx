@@ -70,7 +70,7 @@ const Subscriptions = () => {
               <Package className="h-8 w-8" />
               Subscription Management
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 text-lg mt-1">
               Monitor and manage all active subscriptions
             </p>
           </div>
