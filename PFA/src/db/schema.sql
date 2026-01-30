@@ -26,6 +26,8 @@ CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
+    first_name TEXT,
+    last_name TEXT,
     company_name TEXT,
     stripe_secret_key BYTEA NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()

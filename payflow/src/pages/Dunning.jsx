@@ -28,12 +28,11 @@ const Dunning = () => {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Failed Payments</h1>
+          <h1 className="text-3xl font-bold text-gray-900 text-primary-600">Failed Payments</h1>
           <p className="text-gray-600 mt-1">
             Manage customers with payment issues to reduce churn
           </p>
         </div>
-
         {/* Error */}
         {error && <ErrorMessage message={error} onRetry={refetch} />}
 

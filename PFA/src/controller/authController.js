@@ -30,6 +30,12 @@ export const authController = {
       const email = sanitizeEmail(req.body?.email);
       const password = req.body?.password;
       const confirmPassword = req.body?.confirmPassword;
+      const firstName = req.body?.firstName
+        ? sanitizeInput(req.body.firstName)
+        : null;
+      const lastName = req.body?.lastName
+        ? sanitizeInput(req.body.lastName)
+        : null;
       const companyName = req.body?.companyName
         ? sanitizeInput(req.body.companyName)
         : null;
@@ -69,8 +75,8 @@ export const authController = {
       await client.query("BEGIN");
 
       const insertResult = await client.query(
-        `INSERT INTO users (email, password_hash, company_name, isVerified) VALUES ($1, $2, $3, $4) RETURNING id, email, company_name`,
-        [email, hashed, companyName, false],
+        `INSERT INTO users (email, password_hash, first_name, last_name, company_name, isVerified) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, email, first_name, last_name, company_name`,
+        [email, hashed, firstName, lastName, companyName, false],
       );
 
       const user = insertResult.rows[0];
@@ -99,6 +105,8 @@ export const authController = {
         user: {
           id: user.id,
           email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
           companyName: user.company_name,
         },
         message: "Registration successful. Please verify your email.",
@@ -205,6 +213,8 @@ export const authController = {
             user: {
               id: user.id,
               email: user.email,
+              firstName: user.firstName || null,
+              lastName: user.lastName || null,
               companyName: user.companyName || null,
             },
           });
@@ -399,6 +409,173 @@ export const authController = {
       return res.status(500).json({
         message: "Failed to reset password. Please try again later.",
       });
+    }
+  },
+
+  getProfile: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const db = getDBConnection();
+
+      const result = await db.query(
+        "SELECT id, email, first_name, last_name, company_name, created_at, isverified FROM users WHERE id = $1",
+        [userId],
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "User not found." });
+      }
+
+      const user = result.rows[0];
+
+      return res.status(200).json({
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        companyName: user.company_name,
+        createdAt: user.created_at,
+        isVerified: user.isverified,
+      });
+    } catch (err) {
+      logger.error("[GET PROFILE ERROR] ", {
+        userId: req.user?.id,
+        error: err.message,
+      });
+
+      return res.status(500).json({
+        message: "Failed to fetch profile. Please try again later.",
+      });
+    }
+  },
+
+  updateProfile: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { firstName, lastName, companyName } = req.body;
+
+      if (!firstName || !firstName.trim()) {
+        return res.status(400).json({ message: "First name is required." });
+      }
+
+      const sanitizedFirstName = sanitizeInput(firstName);
+      const sanitizedLastName = lastName ? sanitizeInput(lastName) : null;
+      const sanitizedCompanyName = companyName
+        ? sanitizeInput(companyName)
+        : null;
+
+      const db = getDBConnection();
+
+      const result = await db.query(
+        "UPDATE users SET first_name = $1, last_name = $2, company_name = $3 WHERE id = $4 RETURNING id, email, first_name, last_name, company_name, isverified",
+        [sanitizedFirstName, sanitizedLastName, sanitizedCompanyName, userId],
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "User not found." });
+      }
+
+      const user = result.rows[0];
+
+      logger.info("[UPDATE PROFILE] Profile updated successfully", {
+        userId,
+      });
+
+      return res.status(200).json({
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        companyName: user.company_name,
+        isVerified: user.isverified,
+      });
+    } catch (err) {
+      logger.error("[UPDATE PROFILE ERROR] ", {
+        userId: req.user?.id,
+        error: err.message,
+      });
+
+      return res.status(500).json({
+        message: "Failed to update profile. Please try again later.",
+      });
+    }
+  },
+
+  updatePassword: async (req, res) => {
+    let client = null;
+
+    try {
+      const userId = req.user.id;
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({
+          message: "Current password and new password are required.",
+        });
+      }
+
+      if (!validatePassword(newPassword)) {
+        return res.status(400).json({
+          message:
+            "Password must be at least 8 characters and include mixed case + number.",
+        });
+      }
+
+      const db = getDBConnection();
+      client = await db.connect();
+
+      // Get user's current password
+      const userResult = await client.query(
+        "SELECT password_hash FROM users WHERE id = $1",
+        [userId],
+      );
+
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ message: "User not found." });
+      }
+
+      const user = userResult.rows[0];
+
+      // Verify current password
+      const bcrypt = await import("bcrypt");
+      const isPasswordValid = await bcrypt.compare(
+        currentPassword,
+        user.password_hash,
+      );
+
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          message: "Current password is incorrect.",
+        });
+      }
+
+      // Hash new password
+      const hashedPassword = await hashPassword(newPassword);
+
+      // Update password
+      await client.query("UPDATE users SET password_hash = $1 WHERE id = $2", [
+        hashedPassword,
+        userId,
+      ]);
+
+      logger.info("[UPDATE PASSWORD] Password updated successfully", {
+        userId,
+      });
+
+      return res.status(200).json({
+        message: "Password updated successfully.",
+      });
+    } catch (err) {
+      logger.error("[UPDATE PASSWORD ERROR] ", {
+        userId: req.user?.id,
+        error: err.message,
+      });
+
+      return res.status(500).json({
+        message: "Failed to update password. Please try again later.",
+      });
+    } finally {
+      if (client) client.release();
     }
   },
 };

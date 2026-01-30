@@ -9,6 +9,7 @@ import { useDashboard } from "../hooks/useDashboard";
 import Loader from "../components/common/Loader";
 import ErrorMessage from "../components/common/ErrorMessage";
 import { formatCurrency } from "../utils/formatCurrency";
+import { LayoutDashboard } from "lucide-react";
 
 const Dashboard = () => {
   const { metrics, revenueTrends, loading, error, refetch } = useDashboard();
@@ -52,7 +53,10 @@ const Dashboard = () => {
         {/* Header Section */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <h1 className="text-3xl font-bold text-primary-600 flex items-center gap-2">
+              <LayoutDashboard className="h-8 w-8 text-primary-600" />
+              Dashboard
+            </h1>
             <p className="text-gray-600 mt-1">
               Track your subscription metrics and revenue growth
             </p>

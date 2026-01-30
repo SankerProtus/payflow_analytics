@@ -6,18 +6,33 @@ import {
   validateEmail,
   checkPasswordStrength,
 } from "../utils/validation";
-import { Loader } from "lucide-react";
+import { Loader, User, Building2, Mail, Lock } from "lucide-react";
 import { authAPI } from "../api/auth.api";
+import Input from "../components/common/Input";
 
 const Signup = () => {
   const navigate = useNavigate();
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState("");
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    companyName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
-  const handlePasswordChange = (e) => {
-    const strength = checkPasswordStrength(e.target.value);
-    setPasswordStrength(strength);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors({});
+
+    if (name === "password") {
+      const strength = checkPasswordStrength(value);
+      setPasswordStrength(strength);
+    }
   };
 
   const handleSignup = async (event) => {
@@ -25,38 +40,42 @@ const Signup = () => {
     setIsLoading(true);
     setErrors({});
 
-    const formData = {
-      companyName: sanitizeInput(event.target.companyName.value),
-      email: event.target.email.value,
-      password: event.target.password.value,
-      confirmPassword: event.target.confirmPassword.value,
+    const sanitizedData = {
+      firstName: sanitizeInput(formData.firstName),
+      lastName: sanitizeInput(formData.lastName),
+      companyName: sanitizeInput(formData.companyName),
+      email: formData.email,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
     };
 
     // Validation
     if (
-      !formData.companyName ||
-      !formData.email ||
-      !formData.password ||
-      !formData.confirmPassword
+      !sanitizedData.firstName ||
+      !sanitizedData.lastName ||
+      !sanitizedData.companyName ||
+      !sanitizedData.email ||
+      !sanitizedData.password ||
+      !sanitizedData.confirmPassword
     ) {
       setErrors({ general: "All fields are required." });
       setIsLoading(false);
       return;
     }
 
-    if (!validateEmail(formData.email)) {
+    if (!validateEmail(sanitizedData.email)) {
       setErrors({ email: "Please enter a valid email address." });
       setIsLoading(false);
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (sanitizedData.password.length < 6) {
       setErrors({ password: "Password must be at least 6 characters long." });
       setIsLoading(false);
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if (sanitizedData.password !== sanitizedData.confirmPassword) {
       setErrors({ confirmPassword: "Passwords do not match." });
       setIsLoading(false);
       return;
@@ -64,9 +83,11 @@ const Signup = () => {
 
     try {
       const response = await authAPI.signup(
-        formData.email,
-        formData.password,
-        formData.companyName,
+        sanitizedData.email,
+        sanitizedData.password,
+        sanitizedData.firstName,
+        sanitizedData.lastName,
+        sanitizedData.companyName,
       );
 
       if (response.data) {
@@ -152,66 +173,71 @@ const Signup = () => {
             onSubmit={handleSignup}
             className="space-y-5"
           >
-            <div>
-              <label
-                htmlFor="companyName"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Company Name
-              </label>
-              <input
-                id="companyName"
-                name="companyName"
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="First Name"
+                name="firstName"
                 type="text"
-                placeholder="Your Company Inc."
-                autoComplete="organization"
+                value={formData.firstName}
+                onChange={handleChange}
+                placeholder="John"
+                icon={User}
+                error={errors.firstName}
                 required
-                className="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                className="mb-0"
               />
-              {errors.companyName && (
-                <p className="mt-2 text-sm text-red-600">
-                  {errors.companyName}
-                </p>
-              )}
+              <Input
+                label="Last Name"
+                name="lastName"
+                type="text"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder="Doe"
+                icon={User}
+                error={errors.lastName}
+                required
+                className="mb-0"
+              />
             </div>
 
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="you@example.com"
-                autoComplete="email"
-                required
-                className="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-              />
-              {errors.email && (
-                <p className="mt-2 text-sm text-red-600">{errors.email}</p>
-              )}
-            </div>
+            <Input
+              label="Company Name"
+              name="companyName"
+              type="text"
+              value={formData.companyName}
+              onChange={handleChange}
+              placeholder="Your Company Inc."
+              icon={Building2}
+              error={errors.companyName}
+              required
+              className="mb-0"
+            />
+
+            <Input
+              label="Email address"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="you@example.com"
+              icon={Mail}
+              error={errors.email}
+              required
+              className="mb-0"
+            />
 
             <div>
-              <label
-                htmlFor="new-password"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Password
-              </label>
-              <input
-                id="new-password"
+              <Input
+                label="Password"
                 name="password"
                 type="password"
+                value={formData.password}
+                onChange={handleChange}
                 placeholder="Create a strong password"
-                autoComplete="new-password"
-                onChange={handlePasswordChange}
+                icon={Lock}
+                error={errors.password}
                 required
-                className="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                className="mb-0"
               />
               {passwordStrength && (
                 <div className="mt-2">
@@ -230,33 +256,20 @@ const Signup = () => {
                   </div>
                 </div>
               )}
-              {errors.password && (
-                <p className="mt-2 text-sm text-red-600">{errors.password}</p>
-              )}
             </div>
 
-            <div>
-              <label
-                htmlFor="confirm-password"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Confirm Password
-              </label>
-              <input
-                id="confirm-password"
-                name="confirmPassword"
-                type="password"
-                placeholder="Re-enter your password"
-                autoComplete="new-password"
-                required
-                className="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-              />
-              {errors.confirmPassword && (
-                <p className="mt-2 text-sm text-red-600">
-                  {errors.confirmPassword}
-                </p>
-              )}
-            </div>
+            <Input
+              label="Confirm Password"
+              name="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Re-enter your password"
+              icon={Lock}
+              error={errors.confirmPassword}
+              required
+              className="mb-0"
+            />
 
             <div className="flex items-start">
               <input

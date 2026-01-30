@@ -13,4 +13,5 @@ customerRoutes.get("/:id", customerController.getById);
 customerRoutes.get("/:id/timeline", customerController.getTimeline);
 customerRoutes.get("/:id/statistics", customerController.getStatistics);
 customerRoutes.post("/", customerController.create);
-
+customerRoutes.put("/:id", customerController.update);
+customerRoutes.delete("/:id", customerController.deleteCustomer);

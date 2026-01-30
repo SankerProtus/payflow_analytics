@@ -1,12 +1,27 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Users, AlertTriangle } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  AlertTriangle,
+  Activity,
+  FileText,
+  Package,
+  Trophy,
+  Bell,
+} from "lucide-react";
 
 const Sidebar = () => {
   const links = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/analytics", icon: Activity, label: "Analytics" },
     { to: "/customers", icon: Users, label: "Customers" },
+    { to: "/subscriptions", icon: Package, label: "Subscriptions" },
     { to: "/dunning", icon: AlertTriangle, label: "Dunning" },
+    { to: "/reports", icon: FileText, label: "Reports" },
+    { to: "/top-customers", icon: Trophy, label: "Top Customers" },
+    { to: "/activity", icon: Activity, label: "Activity Log" },
+    { to: "/notifications", icon: Bell, label: "Notifications" },
   ];
 
   return (

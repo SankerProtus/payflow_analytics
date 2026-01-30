@@ -16,12 +16,12 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const signup = async (email, password, companyName) => {
+  const signup = async (email, password, firstName, lastName, companyName) => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await authAPI.signup(email, password, companyName);
+      const response = await authAPI.signup(email, password, firstName, lastName, companyName);
 
       const { token, user } = response.data;
       storage.setToken(token);
@@ -42,7 +42,7 @@ export const useAuth = () => {
       const response = await authAPI.login(email, password);
 
       const { token, user } = response.data;
-      storage.set("token", token);
+      storage.setToken(token);
       setUser(user);
       navigate("/dashboard");
     } catch (err) {
@@ -57,7 +57,7 @@ export const useAuth = () => {
       setLoading(true);
       setError(null);
       await authAPI.logout();
-      storage.clearAll();
+      storage.clearToken();
       setUser(null);
       navigate("/login");
     } catch (err) {

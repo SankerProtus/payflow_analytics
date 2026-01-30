@@ -5,23 +5,29 @@ import { useAuth } from "../hooks/useAuth";
 import Logo from "../assets/logo.jpeg";
 import { useNavigate, Link } from "react-router-dom";
 import { validateEmail } from "../utils/validation";
-import { Loader } from "lucide-react";
+import { Loader, Mail, Lock } from "lucide-react";
+import Input from "../components/common/Input";
 
 const Login = () => {
   const navigate = useNavigate();
   const { setUser } = useAuth();
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors({});
+  };
 
   const handleLogIn = async (event) => {
     event.preventDefault();
     setIsLoading(true);
     setErrors({});
-
-    const formData = {
-      email: event.target.email.value,
-      password: event.target.password.value,
-    };
 
     if (!formData.email || !formData.password) {
       setErrors({ general: "All fields are required." });
@@ -99,48 +105,31 @@ const Login = () => {
             onSubmit={handleLogIn}
             className="space-y-6"
           >
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="example@gmail.com"
-                autoComplete="email"
-                required
-                autoFocus
-                className="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-              />
-              {errors.email && (
-                <p className="mt-2 text-sm text-red-600">{errors.email}</p>
-              )}
-            </div>
+            <Input
+              label="Email address"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="example@gmail.com"
+              icon={Mail}
+              error={errors.email}
+              required
+              className="mb-0"
+            />
 
-            <div>
-              <label
-                htmlFor="current-password"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Password
-              </label>
-              <input
-                id="current-password"
-                name="password"
-                type="password"
-                placeholder="Enter your password"
-                autoComplete="current-password"
-                required
-                className="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-              />
-              {errors.password && (
-                <p className="mt-2 text-sm text-red-600">{errors.password}</p>
-              )}
-            </div>
+            <Input
+              label="Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Enter your password"
+              icon={Lock}
+              error={errors.password}
+              required
+              className="mb-0"
+            />
 
             <div className="flex items-center justify-between">
               <div className="flex items-center justify-start">

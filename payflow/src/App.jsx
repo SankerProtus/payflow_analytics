@@ -8,6 +8,13 @@ import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
 import CustomerDetail from "./pages/CustomerDetail";
 import Dunning from "./pages/Dunning";
+import Profile from "./pages/Profile";
+import Analytics from "./pages/Analytics";
+import Reports from "./pages/Reports";
+import Subscriptions from "./pages/Subscriptions";
+import ActivityLog from "./pages/ActivityLog";
+import TopCustomers from "./pages/TopCustomers";
+import Notifications from "./pages/Notifications";
 import Loader from "./components/common/Loader";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -55,12 +62,7 @@ function AppRoutes() {
           </PublicRoute>
         }
       />
-      <Route
-        path="/forgot-password"
-        element={
-          <ForgotPassword />
-        }
-      />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route
         path="/reset-password"
         element={
@@ -108,6 +110,62 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Dunning />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <Analytics />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute>
+            <Reports />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/subscriptions"
+        element={
+          <ProtectedRoute>
+            <Subscriptions />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/activity"
+        element={
+          <ProtectedRoute>
+            <ActivityLog />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/top-customers"
+        element={
+          <ProtectedRoute>
+            <TopCustomers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <Notifications />
           </ProtectedRoute>
         }
       />
