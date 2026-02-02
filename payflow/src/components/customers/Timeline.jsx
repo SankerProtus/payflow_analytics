@@ -55,7 +55,7 @@ const Timeline = ({ events, loading }) => {
     );
   }
 
-  if (events.length === 0) {
+  if (!events || !Array.isArray(events) || events.length === 0) {
     return (
       <div className="text-center py-8">
         <Clock className="h-12 w-12 text-gray-400 mx-auto mb-3" />

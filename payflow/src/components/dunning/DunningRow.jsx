@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { formatCurrency, centsToUSD } from "../../utils/formatCurrency";
+import { centsToUSD } from "../../utils/formatCurrency";
 import RiskBadge from "./RiskBadge";
 import StatusBadge from "../customers/StatusBadge";
 import Button from "../common/Button";

@@ -15,6 +15,7 @@ import Subscriptions from "./pages/Subscriptions";
 import ActivityLog from "./pages/ActivityLog";
 import TopCustomers from "./pages/TopCustomers";
 import Notifications from "./pages/Notifications";
+import Billing from "./pages/Billing";
 import Loader from "./components/common/Loader";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -31,7 +32,7 @@ const ProtectedRoute = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
-// Public Route Component (redirect if already logged in)
+// Public Route Component
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, loading } = useContext(AuthContext);
 
@@ -166,6 +167,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Notifications />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/billing"
+        element={
+          <ProtectedRoute>
+            <Billing />
           </ProtectedRoute>
         }
       />

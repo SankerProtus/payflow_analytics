@@ -1,4 +1,6 @@
-const Loader = ({ size = "md", fullScreen = false, text, className = "" }) => {
+const Loader = (props) => {
+  const { size = "md", fullScreen = false, text, className = "" } = props;
+
   const sizes = {
     sm: "h-4 w-4 border-2",
     md: "h-8 w-8 border-4",

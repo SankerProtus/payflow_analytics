@@ -45,7 +45,6 @@ const Login = () => {
       const response = await authAPI.login(formData.email, formData.password);
 
       if (response.status === 200) {
-        // Save token and user data
         storage.setToken(response.data.token);
         storage.setUser(response.data.user);
 

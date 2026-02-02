@@ -243,7 +243,7 @@ const Reports = () => {
               Export CSV
             </Button>
             <Button
-              className="flex items-center gap-1 hover:bg-gray-200 cursor-pointer"
+              className="flex items-center gap-1 hover:bg-gray-200j cursor-pointer"
               variant="outline"
               onClick={() => handleExport("json")}
               disabled={loading}
@@ -315,7 +315,7 @@ const Reports = () => {
                 variant="outline"
                 onClick={fetchReport}
                 disabled={loading}
-                className="mt-6"
+                className="flex items-center mt-4 hover:cursor-pointer"
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Apply Filter

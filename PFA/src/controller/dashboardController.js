@@ -145,7 +145,8 @@ export const dashboardController = {
         },
         mrr: {
           value: parseInt(data.current_mrr) || 0,
-          change: 0, // Would need historical MRR to calculate
+          // Would need historical MRR to calculate change
+          change: 0,
           period: "month",
         },
         churn_rate: {
@@ -154,7 +155,8 @@ export const dashboardController = {
               ? (data.churn_rate || 0).toFixed(2)
               : data.churn_rate || 0,
           ),
-          change: 0, // Would need historical churn to calculate
+          // Would need historical churn rate to calculate change
+          change: 0,
           period: "month",
         },
         failed_payments: {
@@ -864,9 +866,11 @@ export const dashboardController = {
         c.email,
         c.name,
         c.created_at,
+        c.created_at as customer_since,
         EXTRACT(DAY FROM NOW() - c.created_at)::integer as customer_age_days,
         COUNT(DISTINCT s.id) as subscription_count,
         COUNT(DISTINCT s.id) FILTER (WHERE s.status IN ('active', 'trialing')) as active_subscriptions,
+        COUNT(i.id) as total_invoices,
         COALESCE(SUM(i.amount_paid) FILTER (WHERE i.status = 'paid'), 0) as total_revenue,
         COALESCE(SUM(i.amount_paid) FILTER (WHERE i.status = 'paid' AND i.created_at >= NOW() - INTERVAL '30 days'), 0) as revenue_last_30_days,
         COUNT(i.id) FILTER (WHERE i.status = 'paid') as successful_payments,
@@ -882,7 +886,36 @@ export const dashboardController = {
             END
           ) FILTER (WHERE s.status IN ('active', 'trialing')), 0)
           ELSE 0
-        END as current_mrr
+        END as current_mrr,
+        (
+          SELECT sp.name
+          FROM subscriptions s2
+          LEFT JOIN subscription_plans sp ON s2.plan_id = sp.id
+          WHERE s2.customer_id = c.id AND s2.status IN ('active', 'trialing')
+          ORDER BY s2.created_at DESC
+          LIMIT 1
+        ) as plan_name,
+        (
+          SELECT s2.amount
+          FROM subscriptions s2
+          WHERE s2.customer_id = c.id AND s2.status IN ('active', 'trialing')
+          ORDER BY s2.created_at DESC
+          LIMIT 1
+        ) as plan_amount,
+        (
+          SELECT s2.billing_interval::text
+          FROM subscriptions s2
+          WHERE s2.customer_id = c.id AND s2.status IN ('active', 'trialing')
+          ORDER BY s2.created_at DESC
+          LIMIT 1
+        ) as billing_period,
+        (
+          SELECT s2.status::text
+          FROM subscriptions s2
+          WHERE s2.customer_id = c.id
+          ORDER BY s2.created_at DESC
+          LIMIT 1
+        ) as subscription_status
       FROM customers c
       LEFT JOIN subscriptions s ON c.id = s.customer_id
       LEFT JOIN invoices i ON s.id = i.subscription_id
@@ -1426,7 +1459,7 @@ export const dashboardController = {
   getDashboardSettings: asyncHandler(async (req, res) => {
     const userId = req.user.id;
 
-    // Placeholder settings - would typically be stored in a user_settings table
+    // Placeholder settings - would be stored in a user_settings table
     const settings = {
       user_id: userId,
       theme: "light",

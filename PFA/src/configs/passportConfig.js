@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 import { getDBConnection } from "../db/connection.js";
 import { logger } from "../utils/logger.js";
 
-// Local Strategy for Login
+// Local Strategy 
 passport.use(
   new LocalStrategy(
     { usernameField: "email" },

@@ -10,7 +10,6 @@ dashboardRoutes.use(authMiddleware);
 // Dashboard routes
 dashboardRoutes.get("/", dashboardController.getDashboard);
 dashboardRoutes.get("/metrics", dashboardController.getDashboardMetrics);
-dashboardRoutes.get("/metrices", dashboardController.getDashboardMetrics);
 dashboardRoutes.get(
   "/recent-transactions",
   dashboardController.getRecentTransactions,

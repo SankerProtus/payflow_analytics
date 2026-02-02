@@ -11,7 +11,6 @@ export const useCustomers = () => {
       setLoading(true);
       setError(null);
       const response = await customerAPI.getAll();
-      // Backend returns { customers: [], total: N }
       setCustomers(response.data.customers || response.data || []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch customers");
@@ -45,9 +44,9 @@ export const useCustomerDetails = (customerId) => {
         customerAPI.getStatistics(customerId),
       ]);
 
-      setCustomer(customerRes.data);
-      setTimeline(timelineRes.data);
-      setStatistics(statisticsRes.data);
+      setCustomer(customerRes.data.customer || customerRes.data);
+      setTimeline(timelineRes.data.timeline || timelineRes.data);
+      setStatistics(statisticsRes.data.statistics || statisticsRes.data);
     } catch (err) {
       setError(
         err.response?.data?.message || "Failed to fetch customer details",

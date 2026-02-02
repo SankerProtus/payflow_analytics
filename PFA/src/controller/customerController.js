@@ -7,10 +7,8 @@ import {
 } from "../utils/errorHandler.js";
 
 export const customerController = {
-  /**
-   * GET /api/customers
-   * Get all customers for the authenticated user
-   */
+  // GET /api/customers
+  // Get all customers for the authenticated user
   getCustomers: asyncHandler(async (req, res) => {
     const db = getDBConnection();
     const userId = req.user.id;
@@ -24,6 +22,18 @@ export const customerController = {
                 c.created_at,
                 COUNT(DISTINCT s.id) FILTER (WHERE s.status IN ('active', 'trialing')) as active_subscriptions,
                 COALESCE(SUM(i.amount_paid), 0) as total_revenue,
+                COALESCE(SUM(
+                    CASE
+                        WHEN s.status IN ('active', 'trialing') THEN
+                            CASE
+                                WHEN s.billing_interval = 'month' THEN s.amount
+                                WHEN s.billing_interval = 'year' THEN s.amount / 12
+                                WHEN s.billing_interval = 'week' THEN s.amount * 4.33
+                                ELSE 0
+                            END
+                        ELSE 0
+                    END
+                ), 0) as mrr,
                 CASE
                     WHEN COUNT(s.id) FILTER (WHERE s.status = 'past_due') > 0 THEN 'past_due'
                     WHEN COUNT(s.id) FILTER (WHERE s.status = 'active') > 0 THEN 'active'
@@ -48,10 +58,8 @@ export const customerController = {
     });
   }),
 
-  /**
-   * GET /api/customers/:id
-   * Get detailed customer information including subscriptions
-   */
+  // GET /api/customers/:id
+  // Get detailed customer information including subscriptions
   getById: asyncHandler(async (req, res) => {
     const db = getDBConnection();
     const userId = req.user.id;
@@ -65,7 +73,28 @@ export const customerController = {
                 c.email,
                 c.name,
                 c.created_at,
-                COALESCE(SUM(i.amount_paid), 0) as total_revenue
+                COALESCE(SUM(i.amount_paid), 0) as total_revenue,
+                COUNT(i.id) FILTER (WHERE i.status = 'paid') as payment_count,
+                COALESCE(SUM(
+                    CASE
+                        WHEN s.status IN ('active', 'trialing') THEN
+                            CASE
+                                WHEN s.billing_interval = 'month' THEN s.amount
+                                WHEN s.billing_interval = 'year' THEN s.amount / 12
+                                WHEN s.billing_interval = 'week' THEN s.amount * 4.33
+                                ELSE 0
+                            END
+                        ELSE 0
+                    END
+                ), 0) as mrr,
+                CASE
+                    WHEN COUNT(s.id) FILTER (WHERE s.status = 'past_due') > 0 THEN 'past_due'
+                    WHEN COUNT(s.id) FILTER (WHERE s.status = 'active') > 0 THEN 'active'
+                    WHEN COUNT(s.id) FILTER (WHERE s.status = 'trialing') > 0 THEN 'trialing'
+                    WHEN COUNT(s.id) FILTER (WHERE s.status = 'canceled') > 0 THEN 'canceled'
+                    WHEN COUNT(s.id) FILTER (WHERE s.status = 'paused') > 0 THEN 'paused'
+                    ELSE 'inactive'
+                END as status
             FROM customers c
             LEFT JOIN subscriptions s ON c.id = s.customer_id
             LEFT JOIN invoices i ON s.id = i.subscription_id AND i.status = 'paid'
@@ -115,10 +144,8 @@ export const customerController = {
     });
   }),
 
-  /**
-   * GET /api/customers/:id/timeline
-   * Get activity timeline for a customer
-   */
+  // GET /api/customers/:id/timeline
+  // Get activity timeline for a customer
   getTimeline: asyncHandler(async (req, res) => {
     const db = getDBConnection();
     const userId = req.user.id;

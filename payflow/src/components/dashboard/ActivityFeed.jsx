@@ -10,31 +10,37 @@ import Card from "../common/Card";
 
 const ActivityFeed = ({ activities, loading }) => {
   // Default sample activities if none provided
+  const now = new Date();
   const defaultActivities = [
     {
       type: "subscription_created",
       description: "Jane Smith subscribed to Pro plan ($99/mo)",
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+      // 2 hours ago
+      timestamp: new Date(now - 2 * 60 * 60 * 1000),
     },
     {
       type: "payment_failed",
       description: "Bob Wilson's payment failed ($199)",
-      timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
+      // 5 hours ago
+      timestamp: new Date(now - 5 * 60 * 60 * 1000),
     },
     {
       type: "upgrade",
       description: "Acme Corp upgraded to Enterprise plan ($499/mo)",
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+      // 1 day ago
+      timestamp: new Date(now - 24 * 60 * 60 * 1000),
     },
     {
       type: "trial_ending",
       description: "Sarah Lee's trial ends tomorrow",
-      timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
+      // 3 hours ago
+      timestamp: new Date(now - 3 * 60 * 60 * 1000),
     },
     {
       type: "subscription_canceled",
       description: "Tech Startup canceled subscription",
-      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+      // 2 days ago
+      timestamp: new Date(now - 2 * 24 * 60 * 60 * 1000),
     },
   ];
 

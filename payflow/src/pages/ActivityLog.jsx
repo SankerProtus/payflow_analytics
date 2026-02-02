@@ -128,7 +128,6 @@ const ActivityLog = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-primary-600 flex items-center gap-2">
@@ -157,7 +156,7 @@ const ActivityLog = () => {
               <select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent hover:cursor-pointer"
               >
                 {activityTypes.map((type) => (
                   <option key={type.value} value={type.value}>
@@ -165,7 +164,11 @@ const ActivityLog = () => {
                   </option>
                 ))}
               </select>
-              <Button variant="outline" onClick={fetchActivityLog}>
+              <Button
+                variant="outline"
+                onClick={fetchActivityLog}
+                className="flex items-center hover:cursor-pointer"
+              >
                 <Filter className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
@@ -173,7 +176,6 @@ const ActivityLog = () => {
           </div>
         </Card>
 
-        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <p className="text-sm text-gray-600 mb-1">Total Activities</p>
@@ -209,7 +211,6 @@ const ActivityLog = () => {
           </Card>
         </div>
 
-        {/* Activity Timeline */}
         <Card>
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             Activity Timeline
@@ -280,7 +281,6 @@ const ActivityLog = () => {
           )}
         </Card>
 
-        {/* Load More */}
         {filteredActivities.length > 0 && (
           <div className="flex justify-center">
             <Button

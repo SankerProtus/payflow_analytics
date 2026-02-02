@@ -6,6 +6,7 @@ import {
   validateEmail,
   validatePassword,
   hashPassword,
+  comparePassword,
   generateToken,
 } from "../utils/validation.js";
 import {
@@ -159,7 +160,6 @@ export const authController = {
           if (!user) {
             // Record failed login attempt
             try {
-              // Try to find user by email to get user_id
               const userQuery = await db.query(
                 "SELECT id FROM users WHERE LOWER(email) = $1",
                 [email.toLowerCase()],
@@ -188,7 +188,8 @@ export const authController = {
             });
           }
 
-          // Successful login - clear failed attempts for this IP and user
+          // Successful login
+          // Clear failed attempts for this IP and user
           try {
             await db.query(
               `DELETE FROM failed_login_attempts
@@ -537,8 +538,7 @@ export const authController = {
       const user = userResult.rows[0];
 
       // Verify current password
-      const bcrypt = await import("bcrypt");
-      const isPasswordValid = await bcrypt.compare(
+      const isPasswordValid = await comparePassword(
         currentPassword,
         user.password_hash,
       );

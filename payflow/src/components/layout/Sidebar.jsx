@@ -9,6 +9,7 @@ import {
   Package,
   Trophy,
   Bell,
+  CreditCard,
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -17,6 +18,7 @@ const Sidebar = () => {
     { to: "/analytics", icon: Activity, label: "Analytics" },
     { to: "/customers", icon: Users, label: "Customers" },
     { to: "/subscriptions", icon: Package, label: "Subscriptions" },
+    { to: "/billing", icon: CreditCard, label: "Billing" },
     { to: "/dunning", icon: AlertTriangle, label: "Dunning" },
     { to: "/reports", icon: FileText, label: "Reports" },
     { to: "/top-customers", icon: Trophy, label: "Top Customers" },

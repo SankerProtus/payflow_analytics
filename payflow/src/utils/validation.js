@@ -18,7 +18,6 @@ export const validatePassword = (password) => {
 };
 
 export const validateUsername = (username) => {
-  // At least 3 characters, alphanumeric and underscores only
   const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
   return usernameRegex.test(username.trim());
 };

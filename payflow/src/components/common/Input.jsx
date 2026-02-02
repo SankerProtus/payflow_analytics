@@ -14,6 +14,7 @@ const Input = ({
   className = "",
   icon: Icon,
   helperText,
+  autocomplete,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -49,6 +50,7 @@ const Input = ({
           placeholder={placeholder}
           required={required}
           disabled={disabled}
+          autoComplete={autocomplete}
           className={`input-field ${Icon ? "pl-10" : ""} ${
             isPasswordField ? "pr-10" : ""
           } ${error ? "border-danger-500 focus:ring-danger-500" : ""} ${

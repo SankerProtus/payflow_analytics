@@ -49,7 +49,6 @@ const Signup = () => {
       confirmPassword: formData.confirmPassword,
     };
 
-    // Validation
     if (
       !sanitizedData.firstName ||
       !sanitizedData.lastName ||

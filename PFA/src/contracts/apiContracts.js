@@ -1,18 +1,9 @@
-/**
- * SINGLE SOURCE OF TRUTH - API CONTRACTS
- * This file defines ALL request/response schemas for the entire application.
- * Frontend and backend MUST adhere to these contracts exactly.
- * 
- * Contract versioning: v1.0.0
- * Last updated: 2026-01-22
- */
-
 // ============================================================================
 // AUTHENTICATION CONTRACTS
 // ============================================================================
 
 export const AuthContracts = {
-  
+
   // POST /api/auth/signup
   signup: {
     request: {
@@ -27,6 +18,8 @@ export const AuthContracts = {
           user: {
             id: "uuid",
             email: "string",
+            firstName: "string | null",
+            lastName: "string | null",
             companyName: "string | null",
           },
           message: "string",
@@ -129,7 +122,7 @@ export const AuthContracts = {
 // ============================================================================
 
 export const CustomerContracts = {
-  
+
   // GET /api/customers
   getAll: {
     request: null,
@@ -319,7 +312,7 @@ export const CustomerContracts = {
 // ============================================================================
 
 export const DashboardContracts = {
-  
+
   // GET /api/dashboard/metrics
   getMetrics: {
     request: null,
@@ -449,6 +442,41 @@ export const DashboardContracts = {
       },
     },
   },
+
+  // GET /api/dashboard/customer-activity
+  getCustomerActivity: {
+    request: null,
+    query: {
+      days: "number (optional, default 30, max 90)",
+    },
+    headers: {
+      Authorization: "Bearer <token> (required)",
+    },
+    response: {
+      success: {
+        status: 200,
+        body: {
+          activities: [
+            {
+              customer_id: "uuid",
+              customer_email: "string",
+              customer_name: "string | null",
+              last_login: "ISO 8601 timestamp | null",
+              last_payment_date: "ISO 8601 timestamp | null",
+              total_payments: "number",
+              total_amount_paid: "number (cents)",
+              subscription_status: "active | past_due | canceled | trialing | paused",
+            },
+          ],
+        },
+      },
+      errors: {
+        400: { message: "string" }, // Invalid days parameter
+        401: { message: "string" },
+        500: { message: "string" },
+      },
+    },
+  },
 };
 
 // ============================================================================
@@ -456,7 +484,7 @@ export const DashboardContracts = {
 // ============================================================================
 
 export const DunningContracts = {
-  
+
   // GET /api/dunning
   getList: {
     request: null,
@@ -520,7 +548,7 @@ export const DunningContracts = {
 // ============================================================================
 
 export const SharedTypes = {
-  
+
   // User object (returned after authentication)
   User: {
     id: "uuid",
@@ -593,12 +621,11 @@ export const AuthConfig = {
   tokenType: "JWT",
   tokenPrefix: "Bearer",
   headerName: "Authorization",
-  storageKey: "auth_token", // Frontend localStorage key
-  tokenExpiry: "7d", // 7 days
-  
+  storageKey: "auth_token", 
+
   // Token structure
   tokenFormat: "Authorization: Bearer <JWT_TOKEN>",
-  
+
   // Protected routes require valid token
   protectedRoutes: [
     "/api/customers",
@@ -610,7 +637,7 @@ export const AuthConfig = {
     "/api/auth/logout",
     "/api/auth/profile",
   ],
-  
+
   // Public routes (no token required)
   publicRoutes: [
     "/api/auth/signup",
@@ -651,20 +678,20 @@ export const ErrorCodes = {
   AUTH_TOKEN_INVALID: "auth/token-invalid",
   AUTH_EMAIL_NOT_VERIFIED: "auth/email-not-verified",
   AUTH_ACCOUNT_EXISTS: "auth/account-exists",
-  
+
   // Validation errors
   VALIDATION_EMAIL_INVALID: "validation/email-invalid",
   VALIDATION_PASSWORD_WEAK: "validation/password-weak",
   VALIDATION_REQUIRED_FIELD: "validation/required-field",
-  
+
   // Resource errors
   RESOURCE_NOT_FOUND: "resource/not-found",
   RESOURCE_CONFLICT: "resource/conflict",
-  
+
   // Server errors
   SERVER_DATABASE_ERROR: "server/database-error",
   SERVER_INTERNAL_ERROR: "server/internal-error",
-  
+
   // Rate limiting
   RATE_LIMIT_EXCEEDED: "rate-limit/exceeded",
 };

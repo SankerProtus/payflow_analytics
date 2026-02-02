@@ -43,9 +43,9 @@ const TopCustomers = () => {
     }
   }, [limit]);
 
-    useEffect(() => {
-      fetchTopCustomers();
-    }, [fetchTopCustomers]);
+  useEffect(() => {
+    fetchTopCustomers();
+  }, [fetchTopCustomers]);
 
   const getRankBadge = (rank) => {
     switch (rank) {
@@ -79,7 +79,6 @@ const TopCustomers = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-primary-600 flex items-center gap-2">
@@ -104,7 +103,6 @@ const TopCustomers = () => {
           </div>
         </div>
 
-        {/* Metric Selection */}
         <div className="grid grid-cols-3 gap-4">
           {metrics.map((metric) => {
             const Icon = metric.icon;
@@ -260,7 +258,7 @@ const TopCustomers = () => {
 
                     return (
                       <tr
-                        key={customer.customer_id}
+                        key={customer.customer_id || `customer-${index}`}
                         className={`hover:bg-gray-50 ${rank <= 3 ? "bg-yellow-50/30" : ""}`}
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -275,7 +273,10 @@ const TopCustomers = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <CircleUser name={customer.name || customer.email} size={48} />
+                            <CircleUser
+                              name={customer.name || customer.email}
+                              size={48}
+                            />
                             <div>
                               <div className="text-sm font-medium text-gray-900">
                                 {customer.name || "N/A"}
@@ -339,7 +340,7 @@ const TopCustomers = () => {
             <h3 className="text-sm font-medium text-gray-600 mb-2">
               Top {limit} Total Revenue
             </h3>
-            <p className="text-2xl font-bold text-primary-600">
+            <p className="text-2xl font-bold text-primary-600 break-words">
               {formatCurrency(
                 topCustomers.reduce(
                   (sum, c) => sum + (c.total_revenue || 0),
@@ -352,7 +353,7 @@ const TopCustomers = () => {
             <h3 className="text-sm font-medium text-gray-600 mb-2">
               Average Revenue per Customer
             </h3>
-            <p className="text-2xl font-bold text-primary-600">
+            <p className="text-2xl font-bold text-primary-600 break-words">
               {formatCurrency(
                 topCustomers.reduce(
                   (sum, c) => sum + (c.total_revenue || 0),
@@ -365,7 +366,7 @@ const TopCustomers = () => {
             <h3 className="text-sm font-medium text-gray-600 mb-2">
               Total Invoices
             </h3>
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-2xl font-bold text-gray-900 break-words">
               {topCustomers.reduce(
                 (sum, c) => sum + (c.total_invoices || 0),
                 0,

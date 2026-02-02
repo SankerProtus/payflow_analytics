@@ -109,7 +109,6 @@ const CustomerTable = ({ customers, loading }) => {
         </div>
       )}
 
-      {/* Footer */}
       <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
         <p className="text-sm text-gray-600">
           Showing {filteredCustomers.length} of {customers.length} customers

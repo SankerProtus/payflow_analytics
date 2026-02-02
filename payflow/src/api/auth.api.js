@@ -52,7 +52,6 @@ export const authAPI = {
   },
 };
 
-// Export individual functions for cleaner imports
 export const getProfile = async () => {
   const response = await authAPI.getProfile();
   return response.data;

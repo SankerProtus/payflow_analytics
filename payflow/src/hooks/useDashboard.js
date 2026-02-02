@@ -36,29 +36,22 @@ export const useDashboard = () => {
         dashboardAPI.getDashboardNotifications(),
       ]);
 
-      // Backend returns { metrics: {...}, period_start, period_end }
       setMetrics(metricsRes.data.metrics || metricsRes.data);
 
-      // Backend returns { transactions: [...], total }
       setRecentTransactions(
         transactionsRes.data.transactions || transactionsRes.data || [],
       );
 
-      // Backend returns { trends: [...], summary }
       setRevenueTrends(revenueRes.data.trends || revenueRes.data || []);
 
-      // Backend returns { activities: [...], summary }
       setCustomerActivity(
         activityRes.data.activities || activityRes.data || [],
       );
 
-      // Backend returns dunning overview
       setDunningOverview(dunningRes.data || null);
 
-      // Backend returns subscription stats
       setSubscriptionStats(subscriptionRes.data || null);
 
-      // Backend returns { notifications: [...], unread_count }
       setNotifications(
         notificationsRes.data.notifications || notificationsRes.data || [],
       );

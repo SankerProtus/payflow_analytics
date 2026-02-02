@@ -28,7 +28,7 @@ const CustomerRow = ({ customer }) => {
         {formatCurrency(customer.mrr)}
       </td>
       <td className="px-6 py-4 text-sm text-gray-500">
-        {formatDate(customer.createdAt)}
+        {formatDate(customer.created_at)}
       </td>
       <td className="px-6 py-4 text-right">
         <Button

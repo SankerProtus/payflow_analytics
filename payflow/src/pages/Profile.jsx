@@ -22,7 +22,6 @@ const Profile = () => {
   const [success, setSuccess] = useState(null);
   const [activeTab, setActiveTab] = useState("profile");
 
-  // Profile form state
   const [profileData, setProfileData] = useState({
     firstName: "",
     lastName: "",
@@ -30,7 +29,6 @@ const Profile = () => {
     companyName: "",
   });
 
-  // Password form state
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -172,7 +170,6 @@ const Profile = () => {
   return (
     <Layout>
       <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => navigate(-1)}
@@ -230,7 +227,6 @@ const Profile = () => {
           </nav>
         </div>
 
-        {/* Alerts */}
         {error && (
           <div className="mb-6">
             <ErrorMessage message={error} />
@@ -313,7 +309,7 @@ const Profile = () => {
 
                 <div className="flex justify-end gap-3 pt-4 border-t">
                   <Button
-                  className="flex items-center hover:cursor-pointer focus:outline-none"
+                    className="flex items-center hover:cursor-pointer focus:outline-none"
                     type="button"
                     variant="outline"
                     onClick={handleCancel}
@@ -322,7 +318,11 @@ const Profile = () => {
                     <X className="h-4 w-4 mr-2" />
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={saving} className="flex items-center hover:cursor-pointer focus:outline-none">
+                  <Button
+                    type="submit"
+                    disabled={saving}
+                    className="flex items-center hover:cursor-pointer focus:outline-none"
+                  >
                     {saving ? (
                       <>
                         <Loader size="sm" className="mr-2" />
@@ -360,6 +360,7 @@ const Profile = () => {
                   onChange={handlePasswordChange}
                   icon={Lock}
                   placeholder="Enter your current password"
+                  autocomplete="current-password"
                   required
                 />
 
@@ -371,8 +372,11 @@ const Profile = () => {
                   onChange={handlePasswordChange}
                   icon={Lock}
                   placeholder="Enter your new password"
+                  autocomplete="new-password"
                   helperText={
-                    <span className="text-red-600">Must be at least 8 characters long</span>
+                    <span className="text-red-600">
+                      Must be at least 8 characters long
+                    </span>
                   }
                   required
                 />
@@ -385,6 +389,7 @@ const Profile = () => {
                   onChange={handlePasswordChange}
                   icon={Lock}
                   placeholder="Confirm your new password"
+                  autocomplete="new-password"
                   required
                 />
 
@@ -399,7 +404,11 @@ const Profile = () => {
                     <X className="h-4 w-4 mr-2" />
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={saving} className="flex items-center hover:cursor-pointer focus:outline-none">
+                  <Button
+                    type="submit"
+                    disabled={saving}
+                    className="flex items-center hover:cursor-pointer focus:outline-none"
+                  >
                     {saving ? (
                       <>
                         <Loader size="sm" className="mr-2" />

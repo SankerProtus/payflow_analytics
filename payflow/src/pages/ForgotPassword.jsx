@@ -46,7 +46,6 @@ const ForgotPassword = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        {/* Header */}
         <div className="text-center">
           <div className="flex justify-center mb-4">
             <img
@@ -63,7 +62,6 @@ const ForgotPassword = () => {
           </p>
         </div>
 
-        {/* Forgot Password Card */}
         <div className="bg-white shadow-xl rounded-2xl p-8">
           {!emailSent ? (
             <>
@@ -191,9 +189,7 @@ const ForgotPassword = () => {
             </>
           ) : (
             <>
-              {/* Success State */}
               <div className="text-center">
-                {/* Success Icon */}
                 <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
                   <svg
                     className="h-8 w-8 text-green-600"
@@ -218,7 +214,6 @@ const ForgotPassword = () => {
                   <span className="font-semibold text-gray-900">{email}</span>
                 </p>
 
-                {/* Success Message */}
                 <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm text-left">
                   <p className="font-medium mb-1">Email sent successfully!</p>
                   <p className="text-xs">
@@ -227,7 +222,6 @@ const ForgotPassword = () => {
                   </p>
                 </div>
 
-                {/* Info Box */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-left mb-6">
                   <p className="text-blue-800 mb-2 font-medium">
                     Didn't receive the email?
@@ -239,7 +233,6 @@ const ForgotPassword = () => {
                   </ul>
                 </div>
 
-                {/* Resend Button */}
                 <button
                   onClick={() => setEmailSent(false)}
                   className="w-full bg-white border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all"
@@ -250,7 +243,6 @@ const ForgotPassword = () => {
             </>
           )}
 
-          {/* Back to Login */}
           <div className="mt-6 text-center">
             <Link
               to="/login"

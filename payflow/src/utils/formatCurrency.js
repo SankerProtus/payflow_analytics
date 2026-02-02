@@ -1,4 +1,14 @@
 export const formatCurrency = (amount, currency = "USD", locale = "en-US") => {
+  // Handle undefined, null, or NaN values
+  if (amount === undefined || amount === null || isNaN(amount)) {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(0);
+  }
+
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,

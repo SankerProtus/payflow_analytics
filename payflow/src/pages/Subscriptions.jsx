@@ -63,7 +63,6 @@ const Subscriptions = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-primary-600 flex items-center gap-2">
@@ -76,7 +75,6 @@ const Subscriptions = () => {
           </div>
         </div>
 
-        {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
             <div className="flex items-center justify-between">
@@ -161,7 +159,6 @@ const Subscriptions = () => {
           </Card>
         </div>
 
-        {/* Revenue Metrics */}
         <Card>
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             Revenue Metrics
@@ -190,7 +187,6 @@ const Subscriptions = () => {
           </div>
         </Card>
 
-        {/* Plan Breakdown */}
         <Card>
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             Subscription by Plan
@@ -265,7 +261,6 @@ const Subscriptions = () => {
           )}
         </Card>
 
-        {/* Recent Changes */}
         <Card>
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             Recent Subscription Changes

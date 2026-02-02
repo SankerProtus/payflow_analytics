@@ -27,7 +27,6 @@ const Dunning = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-primary-600 flex items-center gap-2">
             <BanknoteX className="h-10 w-10" />
@@ -37,10 +36,8 @@ const Dunning = () => {
             Manage customers with payment issues to reduce churn
           </p>
         </div>
-        {/* Error */}
         {error && <ErrorMessage message={error} onRetry={refetch} />}
 
-        {/* Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
             <p className="text-sm font-medium text-gray-600 mb-1">
@@ -72,7 +69,6 @@ const Dunning = () => {
           </Card>
         </div>
 
-        {/* High Risk */}
         {groupedByRisk.high.length > 0 && (
           <div>
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
@@ -86,7 +82,6 @@ const Dunning = () => {
           </div>
         )}
 
-        {/* Medium Risk */}
         {groupedByRisk.medium.length > 0 && (
           <div>
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
@@ -100,7 +95,6 @@ const Dunning = () => {
           </div>
         )}
 
-        {/* Low Risk */}
         {groupedByRisk.low.length > 0 && (
           <div>
             <h2 className="text-xl font-semibold text-gray-900 mb-4">

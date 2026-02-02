@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Bell,
   Check,
@@ -7,7 +7,6 @@ import {
   Info,
   CheckCircle,
   XCircle,
-  Filter,
 } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import Card from "../components/common/Card";
@@ -56,9 +55,9 @@ const Notifications = () => {
     }
   }, [filter]);
 
-    useEffect(() => {
-      fetchNotifications();
-    }, [fetchNotifications]);
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   const handleMarkAsRead = async (notificationId) => {
     try {
@@ -214,14 +213,14 @@ const Notifications = () => {
         <Card>
           {notifications.length > 0 ? (
             <div className="space-y-3">
-              {notifications.map((notification) => {
+              {notifications.map((notification, index) => {
                 const { Icon, color, bg } = getNotificationIcon(
                   notification.type,
                 );
 
                 return (
                   <div
-                    key={notification.id}
+                    key={notification.id || `notification-${index}`}
                     className={`flex items-start gap-4 p-4 rounded-lg border transition-all ${
                       notification.is_read
                         ? "border-gray-200 bg-white"

@@ -72,7 +72,6 @@ const Analytics = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-primary-600 flex items-center gap-2">
@@ -96,7 +95,6 @@ const Analytics = () => {
           </div>
         </div>
 
-        {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <div className="flex items-center justify-between">
@@ -158,7 +156,6 @@ const Analytics = () => {
           </Card>
         </div>
 
-        {/* Financial Overview */}
         <Card>
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             Financial Overview
@@ -199,13 +196,11 @@ const Analytics = () => {
           </div>
         </Card>
 
-        {/* Churn Analysis */}
         <Card>
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             Churn Analysis
           </h2>
 
-          {/* At Risk Customers */}
           {churnData?.at_risk_customers?.length > 0 ? (
             <div className="mb-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
@@ -280,7 +275,6 @@ const Analytics = () => {
             </p>
           )}
 
-          {/* Churn Reasons */}
           {churnData?.churn_reasons?.length > 0 && (
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-4">
@@ -305,7 +299,6 @@ const Analytics = () => {
           )}
         </Card>
 
-        {/* Growth Trends */}
         <Card>
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             Monthly Growth Trends
@@ -383,7 +376,6 @@ const Analytics = () => {
           )}
         </Card>
 
-        {/* Customer Lifetime Value */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
             <h2 className="text-xl font-semibold text-gray-900 mb-4">

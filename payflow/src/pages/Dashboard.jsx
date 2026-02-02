@@ -30,7 +30,6 @@ const Dashboard = () => {
     );
   }
 
-  // Calculate derived metrics - handle nested response structure
   const mrrValue = metrics?.mrr?.value ?? metrics?.mrr ?? 0;
   const mrrChange = metrics?.mrr?.change ?? metrics?.mrrChange ?? 12.3;
 
@@ -50,7 +49,6 @@ const Dashboard = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header Section */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-primary-600 flex items-center gap-2">
@@ -70,10 +68,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Alert Banner */}
         <AlertBanner failedPaymentsCount={failedPayments} />
 
-        {/* Key Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <MetricCard
             title="Monthly Recurring Revenue"
@@ -111,10 +107,8 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Revenue Chart */}
         <RevenueChart data={revenueTrends} loading={loading} />
 
-        {/* Two Column Layout for Stats and Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-card p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -148,11 +142,9 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Recent Activity Feed */}
           <ActivityFeed />
         </div>
 
-        {/* Customer Health & Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-card p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -186,7 +178,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Month-to-Date Stats */}
           <div className="bg-white rounded-xl shadow-card p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Month-to-Date Performance

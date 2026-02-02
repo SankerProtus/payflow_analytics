@@ -21,10 +21,17 @@ export const useAuth = () => {
       setLoading(true);
       setError(null);
 
-      const response = await authAPI.signup(email, password, firstName, lastName, companyName);
+      const response = await authAPI.signup(
+        email,
+        password,
+        firstName,
+        lastName,
+        companyName,
+      );
 
       const { token, user } = response.data;
       storage.setToken(token);
+      storage.setUser(user); // Persist user data
       setUser(user);
       navigate("/dashboard");
     } catch (err) {
@@ -43,6 +50,7 @@ export const useAuth = () => {
 
       const { token, user } = response.data;
       storage.setToken(token);
+      storage.setUser(user); // Persist user data
       setUser(user);
       navigate("/dashboard");
     } catch (err) {
@@ -57,11 +65,15 @@ export const useAuth = () => {
       setLoading(true);
       setError(null);
       await authAPI.logout();
-      storage.clearToken();
+      storage.clearAll(); // Clear all localStorage data
       setUser(null);
       navigate("/login");
     } catch (err) {
       setError(err.response?.data?.message || "Logout failed");
+      // Clear local storage even if API call fails
+      storage.clearAll();
+      setUser(null);
+      navigate("/login");
     } finally {
       setLoading(false);
     }
@@ -73,11 +85,9 @@ export const useAuth = () => {
       setError(null);
 
       await authAPI.verifyEmail(token);
-    }
-    catch (err) {
+    } catch (err) {
       setError(err.response?.data?.message || "Email verification failed");
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   };
