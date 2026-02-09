@@ -1,8 +1,4 @@
-/**
- * useSubscriptions Hook
- * Fetch customer subscriptions
- */
-
+// Hook to fetch and manage subscriptions for a given customer
 import { useState, useEffect } from "react";
 import { subscriptionAPI } from "../api/subscription.api";
 

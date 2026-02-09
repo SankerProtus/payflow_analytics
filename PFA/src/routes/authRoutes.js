@@ -17,8 +17,6 @@ authRoutes.use((req, res, next) => {
 
 authRoutes.post("/signup", authController.signup);
 authRoutes.post("/login", Limiters.loginLimiter, authController.login);
-authRoutes.get("/google", authController.googleAuthController);
-authRoutes.get("/google/secrets", authController.googleAuthCallback);
 authRoutes.post("/logout", authMiddleware, authController.logout);
 authRoutes.post("/forgot-password", authController.passwordReset);
 authRoutes.post("/reset-password", authController.resetPasswordHandler);

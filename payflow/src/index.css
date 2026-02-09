@@ -105,3 +105,55 @@
     opacity: 0.5;
   }
 }
+
+/* Responsive utilities */
+@layer utilities {
+
+  /* Touch-friendly tap targets - minimum 44x44px for iOS, 48x48px for Android */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevent text size adjustment on mobile */
+  .no-text-size-adjust {
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Better scrolling on iOS */
+  .smooth-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent horizontal scroll */
+  .no-horizontal-scroll {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+}
+
+/* Mobile-first responsive font sizes */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 1025px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+body {
+  background: url("../public/vite.svg");
+}
+

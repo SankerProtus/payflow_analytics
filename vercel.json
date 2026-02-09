@@ -1,0 +1,13 @@
+{
+  "buildCommand": "cd payflow && npm install && npm run build",
+  "outputDirectory": "payflow/dist",
+  "framework": "vite",
+  "installCommand": "cd payflow && npm install",
+  "devCommand": "cd payflow && npm run dev",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

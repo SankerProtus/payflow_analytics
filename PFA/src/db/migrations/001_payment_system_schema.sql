@@ -211,7 +211,6 @@ CREATE INDEX idx_billing_history_created_at ON billing_history(created_at DESC);
 -- ======================================================================
 -- ENHANCED INVOICES TABLE (Additional fields)
 -- ======================================================================
-======================================================================
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS customer_id UUID REFERENCES customers(id) ON DELETE CASCADE;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS invoice_number TEXT UNIQUE;
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'usd';

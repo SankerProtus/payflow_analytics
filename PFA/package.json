@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "preview": "node src/index.js"
+    "preview": "node src/index.js",
+    "migrate": "node src/db/runMigrations.js"
   },
   "keywords": [],
   "author": "",

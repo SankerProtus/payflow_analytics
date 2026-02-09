@@ -49,18 +49,20 @@ const CustomerTable = ({ customers, loading }) => {
   return (
     <div className="bg-white rounded-lg shadow-card overflow-hidden">
       {/* Filters */}
-      <div className="p-4 border-b border-gray-200 flex gap-4">
+      <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row gap-3 sm:gap-4">
         <input
           type="text"
           placeholder="Search customers..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+          className="flex-1 px-4 py-2 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none touch-manipulation"
+          style={{ fontSize: "16px" }}
         />
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+          className="w-full sm:w-auto px-4 py-2 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none touch-manipulation"
+          style={{ fontSize: "16px" }}
         >
           <option value="all">All Statuses</option>
           <option value="active">Active</option>
@@ -80,22 +82,22 @@ const CustomerTable = ({ customers, loading }) => {
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[640px]">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Customer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   MRR
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Since
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -109,8 +111,8 @@ const CustomerTable = ({ customers, loading }) => {
         </div>
       )}
 
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-        <p className="text-sm text-gray-600">
+      <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200">
+        <p className="text-xs sm:text-sm text-gray-600">
           Showing {filteredCustomers.length} of {customers.length} customers
         </p>
       </div>

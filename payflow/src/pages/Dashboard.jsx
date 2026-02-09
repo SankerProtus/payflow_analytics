@@ -48,18 +48,18 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-primary-600 flex items-center gap-2">
-              <LayoutDashboard className="h-8 w-8 text-primary-600" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-primary-600 flex items-center gap-2">
+              <LayoutDashboard className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600" />
               Dashboard
             </h1>
-            <p className="text-gray-600 mt-2 text-lg">
+            <p className="text-gray-600 mt-1 sm:mt-2 text-base sm:text-lg">
               Track your subscription metrics and revenue growth
             </p>
           </div>
-          <div className="text-md text-gray-600">
+          <div className="text-sm sm:text-md text-gray-600">
             {new Date().toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -109,33 +109,41 @@ const Dashboard = () => {
 
         <RevenueChart data={revenueTrends} loading={loading} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow-card p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="bg-white rounded-xl shadow-card p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
               Revenue Breakdown
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                <span className="text-gray-600">New MRR (This Month)</span>
-                <span className="font-semibold text-success-600">
+                <span className="text-sm sm:text-base text-gray-600">
+                  New MRR (This Month)
+                </span>
+                <span className="text-sm sm:text-base font-semibold text-success-600">
                   +{formatCurrency(metrics?.newMrr || 1240)}
                 </span>
               </div>
               <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                <span className="text-gray-600">Churned MRR</span>
-                <span className="font-semibold text-danger-600">
+                <span className="text-sm sm:text-base text-gray-600">
+                  Churned MRR
+                </span>
+                <span className="text-sm sm:text-base font-semibold text-danger-600">
                   -{formatCurrency(metrics?.churnedMrr || 380)}
                 </span>
               </div>
               <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                <span className="text-gray-600">Expansion MRR</span>
-                <span className="font-semibold text-primary-600">
+                <span className="text-sm sm:text-base text-gray-600">
+                  Expansion MRR
+                </span>
+                <span className="text-sm sm:text-base font-semibold text-primary-600">
                   +{formatCurrency(metrics?.expansionMrr || 520)}
                 </span>
               </div>
               <div className="flex justify-between items-center pt-2">
-                <span className="text-gray-900 font-medium">Net New MRR</span>
-                <span className="font-bold text-primary-600 text-lg">
+                <span className="text-sm sm:text-base text-gray-900 font-medium">
+                  Net New MRR
+                </span>
+                <span className="text-base sm:text-lg font-bold text-primary-600">
                   +{formatCurrency(metrics?.netNewMrr || 1380)}
                 </span>
               </div>
@@ -145,65 +153,79 @@ const Dashboard = () => {
           <ActivityFeed />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow-card p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="bg-white rounded-xl shadow-card p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
               Customer Health
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                <span className="text-gray-600">Average Lifetime Value</span>
-                <span className="font-semibold text-gray-900">
+                <span className="text-sm sm:text-base text-gray-600">
+                  Average Lifetime Value
+                </span>
+                <span className="text-sm sm:text-base font-semibold text-gray-900">
                   {formatCurrency(metrics?.avgLtv || 1584)}
                 </span>
               </div>
               <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                <span className="text-gray-600">ARPU</span>
-                <span className="font-semibold text-gray-900">
+                <span className="text-sm sm:text-base text-gray-600">ARPU</span>
+                <span className="text-sm sm:text-base font-semibold text-gray-900">
                   {formatCurrency(metrics?.arpu || 132)}
                 </span>
               </div>
               <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                <span className="text-gray-600">Avg. Customer Lifetime</span>
-                <span className="font-semibold text-gray-900">
+                <span className="text-sm sm:text-base text-gray-600">
+                  Avg. Customer Lifetime
+                </span>
+                <span className="text-sm sm:text-base font-semibold text-gray-900">
                   {metrics?.avgLifetime || 12} months
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Customer Acquisition Cost</span>
-                <span className="font-semibold text-gray-900">
+                <span className="text-sm sm:text-base text-gray-600">
+                  Customer Acquisition Cost
+                </span>
+                <span className="text-sm sm:text-base font-semibold text-gray-900">
                   {formatCurrency(metrics?.cac || 245)}
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-card p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-white rounded-xl shadow-card p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
               Month-to-Date Performance
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                <span className="text-gray-600">New Customers</span>
-                <span className="font-semibold text-success-600">
+                <span className="text-sm sm:text-base text-gray-600">
+                  New Customers
+                </span>
+                <span className="text-sm sm:text-base font-semibold text-success-600">
                   +{metrics?.newCustomersMtd || 12}
                 </span>
               </div>
               <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                <span className="text-gray-600">Cancellations</span>
-                <span className="font-semibold text-danger-600">
+                <span className="text-sm sm:text-base text-gray-600">
+                  Cancellations
+                </span>
+                <span className="text-sm sm:text-base font-semibold text-danger-600">
                   {metrics?.cancellationsMtd || 5}
                 </span>
               </div>
               <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                <span className="text-gray-600">Upgrades</span>
-                <span className="font-semibold text-primary-600">
+                <span className="text-sm sm:text-base text-gray-600">
+                  Upgrades
+                </span>
+                <span className="text-sm sm:text-base font-semibold text-primary-600">
                   {metrics?.upgradesMtd || 8}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Payment Recovery Rate</span>
-                <span className="font-semibold text-gray-900">
+                <span className="text-sm sm:text-base text-gray-600">
+                  Payment Recovery Rate
+                </span>
+                <span className="text-sm sm:text-base font-semibold text-gray-900">
                   {metrics?.recoveryRate || 68}%
                 </span>
               </div>

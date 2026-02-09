@@ -229,28 +229,6 @@ export const authController = {
     }
   },
 
-  googleAuthController: passport.authenticate("google", {
-    scope: ["profile", "email"],
-  }),
-
-  googleAuthCallback: (req, res, next) => {
-    passport.authenticate(
-      "google",
-      { successRedirect: "/dashboard", failureRedirect: "/login" },
-      function (err, user, _info) {
-        if (err) return next(err);
-
-        if (!user) return res.redirect("/login");
-
-        req.login(user, function (err) {
-          if (err) return next(err);
-
-          return res.redirect("/dashboard");
-        });
-      },
-    )(req, res, next);
-  },
-
   logout: (req, res) => {
     if (!req.user) {
       return res.status(400).json({ message: "Not authenticated." });

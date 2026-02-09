@@ -33,6 +33,11 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", message: "PayFlow API is running" });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/customers", customerRoutes);

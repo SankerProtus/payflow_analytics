@@ -11,6 +11,7 @@ import Layout from "../components/layout/Layout";
 import Card from "../components/common/Card";
 import Loader from "../components/common/Loader";
 import ErrorMessage from "../components/common/ErrorMessage";
+import ResponsiveTable from "../components/common/ResponsiveTable";
 import { dashboardAPI } from "../api/dashboard.api";
 import { formatCurrency } from "../utils/formatCurrency";
 
@@ -43,9 +44,9 @@ const Analytics = () => {
     }
   }, [selectedPeriod]);
 
-    useEffect(() => {
-      fetchAnalytics();
-    }, [selectedPeriod, fetchAnalytics]);
+  useEffect(() => {
+    fetchAnalytics();
+  }, [selectedPeriod, fetchAnalytics]);
 
   if (loading) {
     return (
@@ -71,22 +72,22 @@ const Analytics = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-primary-600 flex items-center gap-2">
-              <Activity className="h-8 w-8" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-primary-600 flex items-center gap-2">
+              <Activity className="h-6 w-6 sm:h-8 sm:w-8" />
               Analytics Dashboard
             </h1>
-            <p className="text-gray-600 text-lg mt-1">
+            <p className="text-gray-600 text-base sm:text-lg mt-1">
               Deep insights into your business performance
             </p>
           </div>
-          <div>
+          <div className="w-full sm:w-auto">
             <select
               value={selectedPeriod}
               onChange={(e) => setSelectedPeriod(Number(e.target.value))}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full sm:w-auto px-4 py-2 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent touch-manipulation"
             >
               <option value={3}>Last 3 Months</option>
               <option value={6}>Last 6 Months</option>
@@ -95,17 +96,17 @@ const Analytics = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           <Card>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">
                   Average Churn Rate
                 </p>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">
                   {avgChurnRate.toFixed(2)}%
                 </p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">
                   Last {selectedPeriod} months
                 </p>
               </div>
@@ -122,14 +123,16 @@ const Analytics = () => {
           <Card>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">
                   Customer Growth Rate
                 </p>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">
                   {avgCustomerGrowth > 0 ? "+" : ""}
                   {avgCustomerGrowth.toFixed(1)}%
                 </p>
-                <p className="text-sm text-gray-500 mt-1">Average monthly</p>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                  Average monthly
+                </p>
               </div>
               <div className="p-3 rounded-full bg-blue-100">
                 <Users className="h-6 w-6 text-blue-600" />
@@ -140,14 +143,16 @@ const Analytics = () => {
           <Card>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">
+                <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">
                   Revenue Growth Rate
                 </p>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">
                   {avgRevenueGrowth > 0 ? "+" : ""}
                   {avgRevenueGrowth.toFixed(1)}%
                 </p>
-                <p className="text-sm text-gray-500 mt-1">Average monthly</p>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                  Average monthly
+                </p>
               </div>
               <div className="p-3 rounded-full bg-green-100">
                 <TrendingUp className="h-6 w-6 text-green-600" />
@@ -157,37 +162,41 @@ const Analytics = () => {
         </div>
 
         <Card>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">
             Financial Overview
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <div>
-              <p className="text-sm text-gray-600 mb-1">
+              <p className="text-xs sm:text-sm text-gray-600 mb-1">
                 Monthly Recurring Revenue
               </p>
-              <p className="text-2xl font-bold text-primary-600">
+              <p className="text-xl sm:text-2xl font-bold text-primary-600">
                 {formatCurrency(financialData?.recurring_revenue?.mrr || 0)}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600 mb-1">
+              <p className="text-xs sm:text-sm text-gray-600 mb-1">
                 Annual Recurring Revenue
               </p>
-              <p className="text-2xl font-bold text-primary-600">
+              <p className="text-xl sm:text-2xl font-bold text-primary-600">
                 {formatCurrency(financialData?.recurring_revenue?.arr || 0)}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600 mb-1">Total Collected</p>
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-xs sm:text-sm text-gray-600 mb-1">
+                Total Collected
+              </p>
+              <p className="text-xl sm:text-2xl font-bold text-green-600">
                 {formatCurrency(
                   financialData?.revenue_summary?.total_collected || 0,
                 )}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600 mb-1">Outstanding Invoices</p>
-              <p className="text-2xl font-bold text-yellow-600">
+              <p className="text-xs sm:text-sm text-gray-600 mb-1">
+                Outstanding Invoices
+              </p>
+              <p className="text-xl sm:text-2xl font-bold text-yellow-600">
                 {formatCurrency(
                   financialData?.revenue_summary?.outstanding_invoices || 0,
                 )}
@@ -197,30 +206,32 @@ const Analytics = () => {
         </Card>
 
         <Card>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">
             Churn Analysis
           </h2>
 
           {churnData?.at_risk_customers?.length > 0 ? (
-            <div className="mb-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-                Customers at Risk ({churnData.at_risk_customers.length})
+            <div className="mb-4 sm:mb-6">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                <span className="truncate">
+                  Customers at Risk ({churnData.at_risk_customers.length})
+                </span>
               </h3>
-              <div className="overflow-x-auto">
+              <ResponsiveTable>
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Customer
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Risk Level
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Failed Payments
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
                     </tr>
@@ -233,19 +244,19 @@ const Analytics = () => {
                           key={customer.customer_id}
                           className="hover:bg-gray-50"
                         >
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                             <div>
-                              <div className="text-sm font-medium text-gray-900">
+                              <div className="text-xs sm:text-sm font-medium text-gray-900">
                                 {customer.name || customer.email}
                               </div>
-                              <div className="text-sm text-gray-500">
+                              <div className="text-xs sm:text-sm text-gray-500">
                                 {customer.email}
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                             <span
-                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                              className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
                             ${
                               customer.churn_risk === "high"
                                 ? "bg-red-100 text-red-800"
@@ -257,17 +268,17 @@ const Analytics = () => {
                               {customer.churn_risk}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                             {customer.failed_payment_count}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                             {customer.status}
                           </td>
                         </tr>
                       ))}
                   </tbody>
                 </table>
-              </div>
+              </ResponsiveTable>
             </div>
           ) : (
             <p className="text-gray-500 text-center py-8">
@@ -300,27 +311,27 @@ const Analytics = () => {
         </Card>
 
         <Card>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">
             Monthly Growth Trends
           </h2>
           {growthData?.monthly_trends?.length > 0 ? (
-            <div className="overflow-x-auto">
+            <ResponsiveTable>
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Period
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       New Customers
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Customer Growth
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Revenue
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Revenue Growth
                     </th>
                   </tr>
@@ -331,13 +342,13 @@ const Analytics = () => {
                     .reverse()
                     .map((trend, index) => (
                       <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-gray-900">
                           {trend.period}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                           {trend.new_customers}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm">
                           <span
                             className={
                               trend.customer_growth_rate >= 0
@@ -349,10 +360,10 @@ const Analytics = () => {
                             {trend.customer_growth_rate}%
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                           {formatCurrency(trend.revenue)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm">
                           <span
                             className={
                               trend.revenue_growth_rate >= 0
@@ -368,7 +379,7 @@ const Analytics = () => {
                     ))}
                 </tbody>
               </table>
-            </div>
+            </ResponsiveTable>
           ) : (
             <p className="text-gray-500 text-center py-8">
               No growth data available
@@ -376,21 +387,25 @@ const Analytics = () => {
           )}
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Card>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 mb-4">
               Customer Metrics
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                <span className="text-gray-600">Total Customers</span>
-                <span className="text-xl font-bold text-gray-900">
+                <span className="text-sm sm:text-base text-gray-600">
+                  Total Customers
+                </span>
+                <span className="text-lg sm:text-xl font-bold text-gray-900">
                   {financialData?.customer_metrics?.total_customers || 0}
                 </span>
               </div>
               <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                <span className="text-gray-600">Avg. Customer LTV</span>
-                <span className="text-xl font-bold text-primary-600">
+                <span className="text-sm sm:text-base text-gray-600">
+                  Avg. Customer LTV
+                </span>
+                <span className="text-lg sm:text-xl font-bold text-primary-600">
                   {formatCurrency(
                     financialData?.customer_metrics
                       ?.avg_customer_lifetime_value || 0,
@@ -401,19 +416,23 @@ const Analytics = () => {
           </Card>
 
           <Card>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 mb-4">
               Current State
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                <span className="text-gray-600">Active Subscriptions</span>
-                <span className="text-xl font-bold text-gray-900">
+                <span className="text-sm sm:text-base text-gray-600">
+                  Active Subscriptions
+                </span>
+                <span className="text-lg sm:text-xl font-bold text-gray-900">
                   {growthData?.current_state?.active_subscriptions || 0}
                 </span>
               </div>
               <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                <span className="text-gray-600">Total Revenue</span>
-                <span className="text-xl font-bold text-primary-600">
+                <span className="text-sm sm:text-base text-gray-600">
+                  Total Revenue
+                </span>
+                <span className="text-lg sm:text-xl font-bold text-primary-600">
                   {formatCurrency(
                     growthData?.current_state?.total_revenue || 0,
                   )}

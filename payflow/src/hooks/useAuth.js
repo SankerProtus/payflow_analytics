@@ -31,7 +31,7 @@ export const useAuth = () => {
 
       const { token, user } = response.data;
       storage.setToken(token);
-      storage.setUser(user); // Persist user data
+      storage.setUser(user);
       setUser(user);
       navigate("/dashboard");
     } catch (err) {
@@ -50,7 +50,7 @@ export const useAuth = () => {
 
       const { token, user } = response.data;
       storage.setToken(token);
-      storage.setUser(user); // Persist user data
+      storage.setUser(user);
       setUser(user);
       navigate("/dashboard");
     } catch (err) {
@@ -65,12 +65,11 @@ export const useAuth = () => {
       setLoading(true);
       setError(null);
       await authAPI.logout();
-      storage.clearAll(); // Clear all localStorage data
+      storage.clearAll();
       setUser(null);
       navigate("/login");
     } catch (err) {
       setError(err.response?.data?.message || "Logout failed");
-      // Clear local storage even if API call fails
       storage.clearAll();
       setUser(null);
       navigate("/login");

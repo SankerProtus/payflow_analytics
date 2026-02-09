@@ -9,17 +9,18 @@ const Customers = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 text-primary-600">
-              <Handshake className="h-10 w-10 text-primary-600 inline-block mr-2" />
-              Customers</h1>
-            <p className="text-gray-600 text-lg mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 text-primary-600 flex items-center gap-2">
+              <Handshake className="h-8 w-8 sm:h-10 sm:w-10 text-primary-600 flex-shrink-0" />
+              <span>Customers</span>
+            </h1>
+            <p className="text-gray-600 text-base sm:text-lg mt-1">
               Manage and view all your customers
             </p>
           </div>
-          <div className="text-md text-gray-600">
+          <div className="text-sm sm:text-md text-gray-600">
             {!loading && `${customers.length} total customers`}
           </div>
         </div>

@@ -21,3 +21,4 @@ export const customerAPI = {
     return api.post("/customers", customerData);
   },
 };
+

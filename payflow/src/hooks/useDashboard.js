@@ -17,7 +17,6 @@ export const useDashboard = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch core dashboard data
       const [
         metricsRes,
         transactionsRes,
