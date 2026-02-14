@@ -18,6 +18,8 @@ import passport from "passport";
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 app.use(passport.initialize());
 app.use("/api/webhooks", webhookRoutes);
 
@@ -33,9 +35,9 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
+    // Allow requests with no origin
     if (!origin) return callback(null, true);
-    
+
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
