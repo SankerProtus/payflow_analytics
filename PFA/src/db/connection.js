@@ -11,17 +11,15 @@ const { Pool } = pg;
 export const getDBConnection = () => {
   if (!db) {
     db = new Pool({
-      host: process.env.PG_HOST,
-      user: process.env.PG_USER,
-      database: process.env.PG_DATABASE,
-      password: process.env.PG_PASSWORD,
-      port: process.env.PG_PORT,
+      connectionString: process.env.DATABASE_URL,
       max: 20,
       connectionTimeoutMillis: 5000,
       acquireTimeoutMillis: 6000,
       idleTimeoutMillis: 30000,
       ssl:
-        process.env.PG_SSL === "true" ? { rejectUnauthorized: false } : false,
+        process.env.NODE_ENV === "production"
+          ? { rejectUnauthorized: false }
+          : false,
     });
 
     db.query("SELECT NOW()", (err, res) => {
