@@ -29,6 +29,7 @@ PayFlow/
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
 - PostgreSQL 14+
 - Stripe Account
@@ -38,6 +39,7 @@ PayFlow/
 ### Local Development
 
 #### 1. Backend Setup
+
 ```bash
 cd PFA
 npm install
@@ -48,6 +50,7 @@ npm run dev
 ```
 
 #### 2. Frontend Setup
+
 ```bash
 cd payflow
 npm install
@@ -63,11 +66,13 @@ Visit: http://localhost:5173
 ### Backend (Railway)
 
 1. **Install Railway CLI:**
+
 ```bash
 npm i -g @railway/cli
 ```
 
 2. **Deploy:**
+
 ```bash
 cd PFA
 railway login
@@ -76,9 +81,11 @@ railway up
 ```
 
 3. **Add PostgreSQL:**
+
 - Railway Dashboard → New → Database → PostgreSQL
 
 4. **Set Environment Variables:**
+
 ```bash
 PG_HOST=${{Postgres.PGHOST}}
 PG_USER=${{Postgres.PGUSER}}
@@ -94,9 +101,11 @@ ENABLE_MIGRATIONS=true
 ```
 
 5. **Configure Root Directory:**
+
 - Railway Dashboard → Settings → Root Directory → `PFA`
 
 6. **Run Migrations:**
+
 ```bash
 curl -X POST https://your-app.railway.app/api/migrations/run
 ```
@@ -104,15 +113,18 @@ curl -X POST https://your-app.railway.app/api/migrations/run
 ### Frontend (Vercel)
 
 1. **Deploy:**
+
 ```bash
 vercel
 ```
 
 2. **Set Environment Variables:**
+
 - Vercel Dashboard → Settings → Environment Variables
 - `VITE_API_URL` = `https://your-railway-app.up.railway.app/api`
 
 3. **Production Deploy:**
+
 ```bash
 vercel --prod
 ```
@@ -126,9 +138,11 @@ vercel --prod
 ## 🔑 Environment Variables
 
 ### Backend (PFA/.env)
+
 See `PFA/.env.example` for all required variables
 
 ### Frontend (payflow/.env)
+
 ```env
 VITE_API_URL=http://localhost:5000/api
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
@@ -148,6 +162,7 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 ## 🛠️ Tech Stack
 
 **Frontend:**
+
 - React 19
 - Vite
 - TailwindCSS
@@ -156,6 +171,7 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 - Stripe React Components
 
 **Backend:**
+
 - Node.js 18
 - Express 5
 - PostgreSQL 14+
@@ -166,17 +182,20 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 ## 🔧 Development
 
 ### Run Migrations
+
 ```bash
 cd PFA
 npm run migrate
 ```
 
 ### Check API Health
+
 ```bash
 curl http://localhost:5000/health
 ```
 
 ### Database Migrations via API
+
 ```bash
 curl -X POST http://localhost:5000/api/migrations/run
 curl http://localhost:5000/api/migrations/status

@@ -4,27 +4,18 @@ import {
   LayoutDashboard,
   Users,
   AlertTriangle,
-  Activity,
   FileText,
   Package,
-  Trophy,
-  Bell,
-  CreditCard,
   X,
 } from "lucide-react";
 
 const Sidebar = ({ isOpen, onClose }) => {
   const links = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { to: "/analytics", icon: Activity, label: "Analytics" },
     { to: "/customers", icon: Users, label: "Customers" },
-    { to: "/subscriptions", icon: Package, label: "Subscriptions" },
-    { to: "/billing", icon: CreditCard, label: "Billing" },
+    { to: "/subscriptions", icon: Package, label: "Subscriptions & Billing" },
     { to: "/dunning", icon: AlertTriangle, label: "Dunning" },
-    { to: "/reports", icon: FileText, label: "Reports" },
-    { to: "/top-customers", icon: Trophy, label: "Top Customers" },
-    { to: "/activity", icon: Activity, label: "Activity Log" },
-    { to: "/notifications", icon: Bell, label: "Notifications" },
+    { to: "/reports", icon: FileText, label: "Reports & Analytics" },
   ];
 
   return (

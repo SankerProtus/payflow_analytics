@@ -6,7 +6,10 @@ import {
   Calendar,
   DollarSign,
   TrendingUp,
+  TrendingDown,
   Users,
+  Activity,
+  AlertTriangle,
 } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import Card from "../components/common/Card";
@@ -21,6 +24,8 @@ const Reports = () => {
   const [error, setError] = useState(null);
   const [selectedReport, setSelectedReport] = useState("revenue");
   const [reportData, setReportData] = useState(null);
+  const [analyticsData, setAnalyticsData] = useState({ churn: null, growth: null });
+  const [selectedPeriod, setSelectedPeriod] = useState(6);
   const [dateRange, setDateRange] = useState({
     startDate: new Date(new Date().setMonth(new Date().getMonth() - 3))
       .toISOString()
@@ -29,6 +34,13 @@ const Reports = () => {
   });
 
   const reportTypes = [
+    {
+      id: "analytics",
+      name: "Analytics",
+      icon: Activity,
+      color: "text-purple-600",
+      bg: "bg-purple-100",
+    },
     {
       id: "revenue",
       name: "Revenue Report",
@@ -64,18 +76,25 @@ const Reports = () => {
       setLoading(true);
       setError(null);
 
-      const response = await dashboardAPI.getFinancialReports(selectedReport, {
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-      });
-
-      setReportData(response.data);
+      if (selectedReport === "analytics") {
+        const [churnRes, growthRes] = await Promise.all([
+          dashboardAPI.getChurnAnalysis(selectedPeriod),
+          dashboardAPI.getGrowthMetrics(),
+        ]);
+        setAnalyticsData({ churn: churnRes.data, growth: growthRes.data });
+      } else {
+        const response = await dashboardAPI.getFinancialReports(selectedReport, {
+          startDate: dateRange.startDate,
+          endDate: dateRange.endDate,
+        });
+        setReportData(response.data);
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load report");
     } finally {
       setLoading(false);
     }
-  }, [selectedReport, dateRange]);
+  }, [selectedReport, dateRange, selectedPeriod]);
 
     useEffect(() => {
       fetchReport();
@@ -100,6 +119,97 @@ const Reports = () => {
     } catch {
       setError("Failed to export report");
     }
+  };
+
+  const renderAnalytics = () => {
+    const churnData = analyticsData.churn;
+    const growthData = analyticsData.growth;
+
+    if (!churnData || !growthData) return null;
+
+    const avgChurnRate = churnData.average_churn_rate || 0;
+    const avgCustomerGrowth = growthData.growth_summary?.avg_customer_growth_rate || 0;
+    const avgRevenueGrowth = growthData.growth_summary?.avg_revenue_growth_rate || 0;
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Analytics Overview</h2>
+          <select
+            value={selectedPeriod}
+            onChange={(e) => setSelectedPeriod(Number(e.target.value))}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value={3}>Last 3 Months</option>
+            <option value={6}>Last 6 Months</option>
+            <option value={12}>Last 12 Months</option>
+          </select>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Average Churn Rate</p>
+                <p className="text-3xl font-bold text-gray-900">{avgChurnRate.toFixed(2)}%</p>
+                <p className="text-sm text-gray-500 mt-1">Last {selectedPeriod} months</p>
+              </div>
+              <div className={`p-3 rounded-full ${avgChurnRate < 5 ? "bg-green-100" : avgChurnRate < 10 ? "bg-yellow-100" : "bg-red-100"}`}>
+                <TrendingDown className={`h-6 w-6 ${avgChurnRate < 5 ? "text-green-600" : avgChurnRate < 10 ? "text-yellow-600" : "text-red-600"}`} />
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Customer Growth Rate</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {avgCustomerGrowth > 0 ? "+" : ""}{avgCustomerGrowth.toFixed(1)}%
+                </p>
+                <p className="text-sm text-gray-500 mt-1">Average monthly</p>
+              </div>
+              <div className="p-3 rounded-full bg-blue-100">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Revenue Growth Rate</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {avgRevenueGrowth > 0 ? "+" : ""}{avgRevenueGrowth.toFixed(1)}%
+                </p>
+                <p className="text-sm text-gray-500 mt-1">Average monthly</p>
+              </div>
+              <div className="p-3 rounded-full bg-green-100">
+                <TrendingUp className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <Card>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Growth Trends</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Monthly Customer Growth</p>
+              <p className="text-2xl font-bold text-primary-600">
+                {avgCustomerGrowth > 0 ? "+" : ""}{avgCustomerGrowth.toFixed(1)}%
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-2">Monthly Revenue Growth</p>
+              <p className="text-2xl font-bold text-primary-600">
+                {avgRevenueGrowth > 0 ? "+" : ""}{avgRevenueGrowth.toFixed(1)}%
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
   };
 
   const renderRevenueReport = () => {
@@ -227,10 +337,10 @@ const Reports = () => {
           <div>
             <h1 className="text-3xl font-bold text-primary-600 flex items-center gap-2">
               <FileText className="h-8 w-8" />
-              Reports Center
+              Reports & Analytics
             </h1>
             <p className="text-gray-600 mt-1">
-              Generate and export detailed business reports
+              Generate detailed reports and analyze business performance
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -255,7 +365,7 @@ const Reports = () => {
         </div>
 
         {/* Report Type Selection */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {reportTypes.map((type) => {
             const Icon = type.icon;
             const isSelected = selectedReport === type.id;
@@ -284,45 +394,47 @@ const Reports = () => {
           })}
         </div>
 
-        {/* Date Range Filter */}
-        <Card>
-          <div className="flex items-center gap-4">
-            <Calendar className="h-5 w-5 text-gray-400" />
-            <div className="flex items-center gap-3 flex-1">
-              <div>
-                <label className="text-sm text-gray-600 block mb-1">From</label>
-                <input
-                  type="date"
-                  value={dateRange.startDate}
-                  onChange={(e) =>
-                    setDateRange({ ...dateRange, startDate: e.target.value })
-                  }
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
+        {/* Date Range Filter - Only show for non-analytics reports */}
+        {selectedReport !== "analytics" && (
+          <Card>
+            <div className="flex items-center gap-4">
+              <Calendar className="h-5 w-5 text-gray-400" />
+              <div className="flex items-center gap-3 flex-1">
+                <div>
+                  <label className="text-sm text-gray-600 block mb-1">From</label>
+                  <input
+                    type="date"
+                    value={dateRange.startDate}
+                    onChange={(e) =>
+                      setDateRange({ ...dateRange, startDate: e.target.value })
+                    }
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600 block mb-1">To</label>
+                  <input
+                    type="date"
+                    value={dateRange.endDate}
+                    onChange={ (e) =>
+                      setDateRange({ ...dateRange, endDate: e.target.value })
+                    }
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={fetchReport}
+                  disabled={loading}
+                  className="flex items-center mt-4 hover:cursor-pointer"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Apply Filter
+                </Button>
               </div>
-              <div>
-                <label className="text-sm text-gray-600 block mb-1">To</label>
-                <input
-                  type="date"
-                  value={dateRange.endDate}
-                  onChange={(e) =>
-                    setDateRange({ ...dateRange, endDate: e.target.value })
-                  }
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-              <Button
-                variant="outline"
-                onClick={fetchReport}
-                disabled={loading}
-                className="flex items-center mt-4 hover:cursor-pointer"
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Apply Filter
-              </Button>
             </div>
-          </div>
-        </Card>
+          </Card>
+        )}
 
         {/* Report Content */}
         {loading ? (
@@ -331,6 +443,7 @@ const Reports = () => {
           <ErrorMessage message={error} onRetry={fetchReport} />
         ) : (
           <>
+            {selectedReport === "analytics" && renderAnalytics()}
             {selectedReport === "revenue" && renderRevenueReport()}
             {selectedReport === "subscriptions" && renderSubscriptionReport()}
             {selectedReport === "customers" && renderCustomerReport()}

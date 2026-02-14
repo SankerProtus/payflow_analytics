@@ -6,7 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
-const__dirname = path.dirname(__filename);
+const __dirname = path.dirname(__filename);
 
 const migrationRoutes = express.Router();
 
@@ -94,9 +94,9 @@ migrationRoutes.get("/status", async (req, res) => {
   try {
     // Check if main tables exist
     const result = await db.query(`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public' 
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
       AND table_type = 'BASE TABLE'
       ORDER BY table_name
     `);

@@ -3,6 +3,7 @@
 React-based frontend for the PayFlow payment analytics platform.
 
 ## Stack
+
 - React 19
 - Vite
 - TailwindCSS 4
@@ -13,20 +14,24 @@ React-based frontend for the PayFlow payment analytics platform.
 ## Development
 
 ### Install Dependencies
+
 ```bash
 npm install
 ```
 
 ### Environment Setup
+
 ```bash
 cp .env.example .env
 ```
 
 Edit `.env` and set:
+
 - `VITE_API_URL` - Your backend API URL
 - `VITE_STRIPE_PUBLISHABLE_KEY` - Stripe publishable key
 
 ### Run Development Server
+
 ```bash
 npm run dev
 ```
@@ -34,11 +39,13 @@ npm run dev
 Visit: http://localhost:5173
 
 ### Build for Production
+
 ```bash
 npm run build
 ```
 
 ### Preview Production Build
+
 ```bash
 npm run preview
 ```
@@ -46,15 +53,18 @@ npm run preview
 ## Deployment
 
 ### Vercel
+
 ```bash
 vercel
 ```
 
 Set environment variables in Vercel Dashboard:
+
 - `VITE_API_URL`
 - `VITE_STRIPE_PUBLISHABLE_KEY`
 
 Then deploy:
+
 ```bash
 vercel --prod
 ```

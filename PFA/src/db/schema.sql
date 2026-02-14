@@ -93,7 +93,7 @@ CREATE TABLE users (
     first_name TEXT,
     last_name TEXT,
     company_name TEXT,
-    stripe_secret_key BYTEA NOT NULL,
+    stripe_secret_key BYTEA, -- Encrypted Stripe secret key - optional, added by user after registration
     isVerified BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

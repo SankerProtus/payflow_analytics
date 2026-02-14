@@ -15,6 +15,13 @@ export const billingRoutes = express.Router();
 billingRoutes.use(authMiddleware);
 
 // ============================================================================
+// SUBSCRIPTION PLANS
+// ============================================================================
+
+// Get available subscription plans
+billingRoutes.get("/plans", paymentController.getPlans);
+
+// ============================================================================
 // PAYMENT INTENTS & SETUP INTENTS
 // ============================================================================
 
@@ -38,26 +45,44 @@ billingRoutes.post("/payment-methods/attach", pmController.attachPaymentMethod);
 billingRoutes.delete("/payment-methods/:id", pmController.detachPaymentMethod);
 
 // List customer's payment methods
-billingRoutes.get("/payment-methods/customer/:customerId", pmController.listPaymentMethods);
+billingRoutes.get(
+  "/payment-methods/customer/:customerId",
+  pmController.listPaymentMethods,
+);
 
 // ============================================================================
 // SUBSCRIPTIONS
 // ============================================================================
 
 // Create subscription
-billingRoutes.post("/subscriptions/create", subscriptionController.createSubscription);
+billingRoutes.post(
+  "/subscriptions/create",
+  subscriptionController.createSubscription,
+);
 
 // Update subscription (change plan, quantity)
-billingRoutes.patch("/subscriptions/:subscriptionId/update", subscriptionController.modifySubscription);
+billingRoutes.patch(
+  "/subscriptions/:subscriptionId/update",
+  subscriptionController.modifySubscription,
+);
 
 // Cancel subscription
-billingRoutes.post("/subscriptions/:subscriptionId/cancel", subscriptionController.cancelSubscription);
+billingRoutes.post(
+  "/subscriptions/:subscriptionId/cancel",
+  subscriptionController.cancelSubscription,
+);
 
 // Pause subscription
-billingRoutes.post("/subscriptions/:subscriptionId/pause", subscriptionController.pauseSubscription);
+billingRoutes.post(
+  "/subscriptions/:subscriptionId/pause",
+  subscriptionController.pauseSubscription,
+);
 
 // Resume subscription
-billingRoutes.post("/subscriptions/:subscriptionId/resume", subscriptionController.resumeSubscription);
+billingRoutes.post(
+  "/subscriptions/:subscriptionId/resume",
+  subscriptionController.resumeSubscription,
+);
 
 // ============================================================================
 // INVOICES
@@ -70,7 +95,13 @@ billingRoutes.get("/invoices/:invoiceId", invoiceController.getInvoice);
 billingRoutes.post("/invoices/:invoiceId/pay", invoiceController.retryPayment);
 
 // List customer invoices
-billingRoutes.get("/invoices/customer/:customerId", invoiceController.listInvoices);
+billingRoutes.get(
+  "/invoices/customer/:customerId",
+  invoiceController.listInvoices,
+);
 
 // Download invoice PDF
-billingRoutes.get("/invoices/:invoiceId/pdf", invoiceController.downloadInvoicePDF);
+billingRoutes.get(
+  "/invoices/:invoiceId/pdf",
+  invoiceController.downloadInvoicePDF,
+);

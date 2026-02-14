@@ -1156,6 +1156,7 @@ export const dashboardController = {
     const days = req.query.days ? Math.min(parseInt(req.query.days), 30) : null;
 
     // Build date filter based on whether days is provided
+    // For main query (params: userId, limit, offset, days = $1, $2, $3, $4)
     const dateFilter = days
       ? `AND c.created_at >= NOW() - ($4 || ' days')::interval`
       : "";
@@ -1164,6 +1165,17 @@ export const dashboardController = {
       : "";
     const dateFilter3 = days
       ? `AND COALESCE(i.payment_failed_at, i.created_at) >= NOW() - ($4 || ' days')::interval`
+      : "";
+
+    // For count query (params: userId, days = $1, $2)
+    const countDateFilter = days
+      ? `AND c.created_at >= NOW() - ($2 || ' days')::interval`
+      : "";
+    const countDateFilter2 = days
+      ? `AND sst.created_at >= NOW() - ($2 || ' days')::interval`
+      : "";
+    const countDateFilter3 = days
+      ? `AND COALESCE(i.payment_failed_at, i.created_at) >= NOW() - ($2 || ' days')::interval`
       : "";
 
     const queryParams = days
@@ -1241,7 +1253,7 @@ export const dashboardController = {
         SELECT c.created_at as timestamp
         FROM customers c
         WHERE c.user_id = $1
-          ${dateFilter}
+          ${countDateFilter}
 
         UNION ALL
 
@@ -1250,7 +1262,7 @@ export const dashboardController = {
         JOIN subscriptions s ON sst.subscription_id = s.id
         JOIN customers c ON s.customer_id = c.id
         WHERE c.user_id = $1
-          ${dateFilter2}
+          ${countDateFilter2}
 
         UNION ALL
 
@@ -1259,7 +1271,7 @@ export const dashboardController = {
         JOIN subscriptions s ON i.subscription_id = s.id
         JOIN customers c ON s.customer_id = c.id
         WHERE c.user_id = $1
-          ${dateFilter3}
+          ${countDateFilter3}
       )
       SELECT COUNT(*) as total FROM all_activities
     `;

@@ -5,6 +5,8 @@ import MetricCard from "../components/dashboard/MetricCard";
 import RevenueChart from "../components/dashboard/RevenueChart";
 import AlertBanner from "../components/dashboard/AlertBanner";
 import ActivityFeed from "../components/dashboard/ActivityFeed";
+import TopCustomersWidget from "../components/dashboard/TopCustomersWidget";
+import RecentActivityWidget from "../components/dashboard/RecentActivityWidget";
 import { useDashboard } from "../hooks/useDashboard";
 import Loader from "../components/common/Loader";
 import ErrorMessage from "../components/common/ErrorMessage";
@@ -151,6 +153,11 @@ const Dashboard = () => {
           </div>
 
           <ActivityFeed />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <TopCustomersWidget />
+          <RecentActivityWidget />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">

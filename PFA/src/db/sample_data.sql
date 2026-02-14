@@ -9,7 +9,8 @@ VALUES
   ('b1ac4c23-b2b0-40bb-9fca-3bcd5e18c048', 'john.doe@techstartup.com', '$2b$10$nuQoMOWQSVHSwe3lbZgx8urO4jMOcN8kwnIEpW43cbMtytw0zowWu', 'John', 'Doe', 'TechStartup Inc', decode('736f6d655f656e637279707465645f6b6579', 'hex'), NOW() - INTERVAL '6 months'),
 
   -- Demo user 2: E-learning platform
-  ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'sarah.wilson@eduplatform.com', '$2b$10$nuQoMOWQSVHSwe3lbZgx8urO4jMOcN8kwnIEpW43cbMtytw0zowWu', 'Sarah', 'Wilson', 'EduPlatform LLC', decode('616e6f746865725f656e637279707465645f6b6579', 'hex'), NOW() - INTERVAL '4 months'),
+  ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', '
+  ', '$2b$10$nuQoMOWQSVHSwe3lbZgx8urO4jMOcN8kwnIEpW43cbMtytw0zowWu', 'Sarah', 'Wilson', 'EduPlatform LLC', decode('616e6f746865725f656e637279707465645f6b6579', 'hex'), NOW() - INTERVAL '4 months'),
 
   -- Demo user 3: Fitness app
   ('b1ffcd99-8d1c-4ef9-cc7e-7cc0ce491b22', 'mike.chen@fitapp.io', '$2b$10$nuQoMOWQSVHSwe3lbZgx8urO4jMOcN8kwnIEpW43cbMtytw0zowWu', 'Mike', 'Chen', 'FitApp.io', decode('666974617070735f656e637279707465645f6b6579', 'hex'), NOW() - INTERVAL '8 months')

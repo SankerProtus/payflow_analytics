@@ -1,11 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, Plus } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import Timeline from "../components/customers/Timeline";
 import StatusBadge from "../components/customers/StatusBadge";
 import Button from "../components/common/Button";
 import Card from "../components/common/Card";
+import CreateSubscriptionModal from "../components/billing/CreateSubscriptionModal";
 import { useCustomerDetail } from "../hooks/useCustomers";
 import Loader from "../components/common/Loader";
 import ErrorMessage from "../components/common/ErrorMessage";
@@ -15,7 +16,12 @@ import { formatDate } from "../utils/formatDate";
 const CustomerDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { customer, timeline, loading, error } = useCustomerDetail(id);
+  const { customer, timeline, loading, error, refetch } = useCustomerDetail(id);
+  const [showCreateSubscription, setShowCreateSubscription] = useState(false);
+
+  const handleSubscriptionCreated = () => {
+    refetch();
+  };
 
   if (loading) {
     return (
@@ -41,6 +47,14 @@ const CustomerDetail = () => {
     );
   }
 
+  // Check if this is a demo/sample customer (fake Stripe ID)
+  const isDemoCustomer =
+    customer.stripe_customer_id &&
+    (customer.stripe_customer_id.startsWith("cus_tech_") ||
+      customer.stripe_customer_id.startsWith("cus_edu_") ||
+      customer.stripe_customer_id.startsWith("cus_fit_") ||
+      customer.stripe_customer_id.match(/^cus_[a-z]+_\d+$/));
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -62,22 +76,52 @@ const CustomerDetail = () => {
                   Customer since {formatDate(customer.created_at)}
                 </span>
               </div>
+              {isDemoCustomer && (
+                <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                  Demo Customer (Sample Data)
+                </div>
+              )}
             </div>
-            {customer.stripe_customer_id && (
+            <div className="flex items-center gap-2">
               <Button
-                variant="ghost"
+                variant="primary"
                 size="sm"
-                onClick={() =>
-                  window.open(
-                    `https://dashboard.stripe.com/customers/${customer.stripe_customer_id}`,
-                    "_blank",
-                  )
-                }
+                onClick={() => setShowCreateSubscription(true)}
+                disabled={isDemoCustomer}
               >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                View in Stripe
+                <Plus className="h-4 w-4 mr-2" />
+                Add Subscription
               </Button>
-            )}
+              {customer.stripe_customer_id && (
+                <div className="relative group">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (isDemoCustomer) {
+                        alert(
+                          "This is a demo customer with sample data. The Stripe customer ID doesn't exist in your actual Stripe account.\n\nTo view real customers in Stripe, create them through the Stripe Dashboard or API.",
+                        );
+                      } else {
+                        window.open(
+                          `https://dashboard.stripe.com/customers/${customer.stripe_customer_id}`,
+                          "_blank",
+                        );
+                      }
+                    }}
+                    className={isDemoCustomer ? "opacity-75" : ""}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    {isDemoCustomer ? "Demo Customer" : "View in Stripe"}
+                  </Button>
+                  {isDemoCustomer && (
+                    <div className="absolute right-0 top-full mt-1 hidden group-hover:block z-10 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg">
+                      This is sample data. The customer doesn't exist in Stripe.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </Card>
 
@@ -117,6 +161,14 @@ const CustomerDetail = () => {
           <Timeline events={timeline} loading={loading} />
         </Card>
       </div>
+
+      {/* Modals */}
+      <CreateSubscriptionModal
+        isOpen={showCreateSubscription}
+        onClose={() => setShowCreateSubscription(false)}
+        onSuccess={handleSubscriptionCreated}
+        preSelectedCustomerId={id}
+      />
     </Layout>
   );
 };

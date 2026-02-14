@@ -279,12 +279,12 @@ export const customerController = {
 
   /**
    * POST /api/customers
-   * Create a new customer
+   * Create a new customer (creates in both database and Stripe)
    */
   create: asyncHandler(async (req, res) => {
     const db = getDBConnection();
     const userId = req.user.id;
-    const { email, name, stripe_customer_id } = req.body;
+    const { email, name, createInStripe = true } = req.body;
 
     // Validate required fields
     if (!email) {
@@ -292,40 +292,70 @@ export const customerController = {
     }
 
     // Check if the customer already exists
-    const existingQuery = stripe_customer_id
-      ? "SELECT id FROM customers WHERE (email = $1 OR stripe_customer_id = $2) AND user_id = $3"
-      : "SELECT id FROM customers WHERE email = $1 AND user_id = $2";
-
-    const existingParams = stripe_customer_id
-      ? [email, stripe_customer_id, userId]
-      : [email, userId];
-
-    const existing = await db.query(existingQuery, existingParams);
+    const existing = await db.query(
+      "SELECT id FROM customers WHERE email = $1 AND user_id = $2",
+      [email, userId],
+    );
 
     if (existing.rowCount > 0) {
       return ErrorResponses.customerExists(res);
     }
 
-    // Create customer
+    let stripeCustomerId;
+
+    // Create customer in Stripe if requested
+    if (createInStripe) {
+      try {
+        // Import stripe at the top if not already
+        const Stripe = (await import("stripe")).default;
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+        const stripeCustomer = await stripe.customers.create({
+          email,
+          name: name || undefined,
+          metadata: {
+            internal_user_id: userId.toString(),
+          },
+        });
+
+        stripeCustomerId = stripeCustomer.id;
+      } catch (error) {
+        logger.error("Error creating Stripe customer", {
+          error: error.message,
+        });
+        // If Stripe fails, still create local customer with pending status
+        stripeCustomerId = `pending_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      }
+    } else {
+      // Create placeholder ID if not creating in Stripe
+      stripeCustomerId = `pending_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+
+    // Create customer in database
     const insertQuery = `
             INSERT INTO customers (user_id, stripe_customer_id, email, name)
             VALUES ($1, $2, $3, $4)
             RETURNING id, stripe_customer_id, email, name, created_at
         `;
 
-    const insertParams = [
+    const result = await db.query(insertQuery, [
       userId,
-      stripe_customer_id ||
-        `cus_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      stripeCustomerId,
       email,
       name || null,
-    ];
+    ]);
 
-    const result = await db.query(insertQuery, insertParams);
+    const customer = result.rows[0];
 
     sendSuccess(res, STATUS.CREATED, {
-      customer: result.rows[0],
-      message: "Customer created successfully",
+      customer: {
+        ...customer,
+        isStripeCustomer: stripeCustomerId.startsWith("cus_"),
+        isPending: stripeCustomerId.startsWith("pending_"),
+      },
+      message: stripeCustomerId.startsWith("cus_")
+        ? "Customer created in database and Stripe"
+        : "Customer created in database (will be synced to Stripe on first payment)",
     });
   }),
 

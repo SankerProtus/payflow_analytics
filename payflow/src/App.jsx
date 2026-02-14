@@ -9,12 +9,7 @@ import Customers from "./pages/Customers";
 import CustomerDetail from "./pages/CustomerDetail";
 import Dunning from "./pages/Dunning";
 import Profile from "./pages/Profile";
-import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
-import Subscriptions from "./pages/Subscriptions";
-import ActivityLog from "./pages/ActivityLog";
-import TopCustomers from "./pages/TopCustomers";
-import Notifications from "./pages/Notifications";
 import Billing from "./pages/Billing";
 import Loader from "./components/common/Loader";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -123,14 +118,6 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/analytics"
-        element={
-          <ProtectedRoute>
-            <Analytics />
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/reports"
         element={
           <ProtectedRoute>
@@ -142,41 +129,25 @@ function AppRoutes() {
         path="/subscriptions"
         element={
           <ProtectedRoute>
-            <Subscriptions />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/activity"
-        element={
-          <ProtectedRoute>
-            <ActivityLog />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/top-customers"
-        element={
-          <ProtectedRoute>
-            <TopCustomers />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/notifications"
-        element={
-          <ProtectedRoute>
-            <Notifications />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/billing"
-        element={
-          <ProtectedRoute>
             <Billing />
           </ProtectedRoute>
         }
+      />
+
+      {/* Redirects for removed/consolidated pages */}
+      <Route path="/analytics" element={<Navigate to="/reports" replace />} />
+      <Route
+        path="/billing"
+        element={<Navigate to="/subscriptions" replace />}
+      />
+      <Route path="/activity" element={<Navigate to="/dashboard" replace />} />
+      <Route
+        path="/top-customers"
+        element={<Navigate to="/dashboard" replace />}
+      />
+      <Route
+        path="/notifications"
+        element={<Navigate to="/dashboard" replace />}
       />
 
       {/* Redirect root to dashboard */}

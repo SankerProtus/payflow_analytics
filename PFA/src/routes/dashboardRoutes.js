@@ -40,11 +40,14 @@ dashboardRoutes.get(
 );
 dashboardRoutes.get("/user-engagement", dashboardController.getUserEngagement);
 dashboardRoutes.get("/activity-logs", dashboardController.getActivityLogs);
-dashboardRoutes.get("/system-health", dashboardController.getSystemHealth);
-dashboardRoutes.get("/custom-reports", dashboardController.getCustomReports);
-dashboardRoutes.post("/custom-reports", dashboardController.createCustomReport);
-dashboardRoutes.get("/export-data", dashboardController.exportDashboardData);
-dashboardRoutes.post("/export-data", dashboardController.initiateDataExport);
+// Placeholder routes - disabled until fully implemented
+// dashboardRoutes.get("/system-health", dashboardController.getSystemHealth);
+// dashboardRoutes.get("/custom-reports", dashboardController.getCustomReports);
+// dashboardRoutes.post("/custom-reports", dashboardController.createCustomReport);
+// dashboardRoutes.get("/export-data", dashboardController.exportDashboardData);
+// dashboardRoutes.post("/export-data", dashboardController.initiateDataExport);
+// dashboardRoutes.get("/settings", dashboardController.getDashboardSettings);
+// dashboardRoutes.put("/settings", dashboardController.updateDashboardSettings);
 dashboardRoutes.get(
   "/notifications",
   dashboardController.getDashboardNotifications,
@@ -57,5 +60,3 @@ dashboardRoutes.post(
   "/notifications/mark-all-read",
   dashboardController.markAllNotificationsAsRead,
 );
-dashboardRoutes.get("/settings", dashboardController.getDashboardSettings);
-dashboardRoutes.put("/settings", dashboardController.updateDashboardSettings);

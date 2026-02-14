@@ -23,18 +23,40 @@ function getStripeClient(apiKey) {
   });
 }
 
-// Decrypt user's Stripe API key from database
+// Decrypt user's Stripe API key from database, or use environment variable as fallback
 async function getUserStripeKey(userId) {
-  const result = await db.query(
-    "SELECT pgp_sym_decrypt(stripe_secret_key, $1) as api_key FROM users WHERE id = $2",
-    [process.env.DB_ENCRYPTION_KEY, userId],
-  );
+  try {
+    const result = await db.query(
+      "SELECT pgp_sym_decrypt(stripe_secret_key, $1) as api_key FROM users WHERE id = $2",
+      [process.env.DB_ENCRYPTION_KEY, userId],
+    );
 
-  if (!result.rows[0]?.api_key) {
-    throw new Error("Stripe API key not found for user");
+    // If user has a personal Stripe key, use it
+    if (result.rows[0]?.api_key) {
+      return result.rows[0].api_key;
+    }
+
+    // Otherwise, fall back to environment variable
+    if (process.env.STRIPE_SECRET_KEY) {
+      logger.info("Using default Stripe API key from environment", { userId });
+      return process.env.STRIPE_SECRET_KEY;
+    }
+
+    throw new Error(
+      "No Stripe API key configured. Please add your Stripe keys to environment variables or user profile.",
+    );
+  } catch (error) {
+    // If decryption fails or user not found, try environment variable
+    if (process.env.STRIPE_SECRET_KEY) {
+      logger.warn("Failed to get user Stripe key, using environment default", {
+        userId,
+        error: error.message,
+      });
+      return process.env.STRIPE_SECRET_KEY;
+    }
+
+    throw new Error("Stripe API key not found. Please configure Stripe keys.");
   }
-
-  return result.rows[0].api_key;
 }
 
 export const stripeService = {
@@ -445,7 +467,6 @@ export const stripeService = {
 
   //  SUBSCRIPTIONS
 
-  //    Create a subscription
   async createSubscription({
     userId,
     customerId,
@@ -460,23 +481,92 @@ export const stripeService = {
       const apiKey = await getUserStripeKey(userId);
       const stripe = getStripeClient(apiKey);
 
-      // Get customer and plan details
-      const [customerData, planData] = await Promise.all([
-        db.query("SELECT stripe_customer_id FROM customers WHERE id = $1", [
-          customerId,
-        ]),
+      logger.info("Starting subscription creation", {
+        customerId,
+        planId,
+        paymentMethodId,
+      });
+
+      const [customerData, planData, paymentMethodData] = await Promise.all([
         db.query(
-          "SELECT stripe_price_id, trial_period_days FROM subscription_plans WHERE id = $1",
+          "SELECT id, stripe_customer_id, email, name FROM customers WHERE id = $1 AND user_id = $2",
+          [customerId, userId],
+        ),
+        db.query(
+          "SELECT stripe_price_id, stripe_product_id, name, amount, currency, billing_interval, trial_period_days FROM subscription_plans WHERE id = $1 AND active = true",
           [planId],
+        ),
+        db.query(
+          "SELECT id, stripe_payment_method_id, customer_id FROM payment_methods WHERE stripe_payment_method_id = $1",
+          [paymentMethodId],
         ),
       ]);
 
-      if (customerData.rows.length === 0) throw new Error("Customer not found");
-      if (planData.rows.length === 0) throw new Error("Plan not found");
+      if (customerData.rows.length === 0) {
+        throw new Error(
+          "Customer not found or does not belong to your account",
+        );
+      }
+      if (planData.rows.length === 0) {
+        throw new Error("Subscription plan not found or is inactive");
+      }
 
-      const stripeCustomerId = customerData.rows[0].stripe_customer_id;
-      const stripePriceId = planData.rows[0].stripe_price_id;
-      const defaultTrial = planData.rows[0].trial_period_days;
+      const customer = customerData.rows[0];
+      const plan = planData.rows[0];
+      const stripeCustomerId = customer.stripe_customer_id;
+      const stripePriceId = plan.stripe_price_id;
+      const defaultTrial = plan.trial_period_days;
+
+      if (paymentMethodData.rows.length === 0) {
+        logger.warn("Payment method not in database, attempting to attach", {
+          paymentMethodId,
+        });
+
+        try {
+          await stripe.paymentMethods.attach(paymentMethodId, {
+            customer: stripeCustomerId,
+          });
+
+          const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
+          const pmData = this._extractPaymentMethodData(pm);
+
+          await db.query(
+            `INSERT INTO payment_methods (
+              customer_id, stripe_payment_method_id, type,
+              card_brand, card_last4, card_exp_month, card_exp_year,
+              is_default, billing_name, billing_email
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+            [
+              customerId,
+              paymentMethodId,
+              pmData.type,
+              pmData.card_brand,
+              pmData.card_last4,
+              pmData.card_exp_month,
+              pmData.card_exp_year,
+              true,
+              pmData.billing_name,
+              pmData.billing_email,
+            ],
+          );
+
+          logger.info("Payment method attached successfully", {
+            paymentMethodId,
+          });
+        } catch (attachError) {
+          logger.error("Failed to attach payment method", {
+            error: attachError.message,
+          });
+          throw new Error(`Invalid payment method: ${attachError.message}`);
+        }
+      } else if (paymentMethodData.rows[0].customer_id !== customerId) {
+        throw new Error("Payment method does not belong to this customer");
+      }
+
+      const finalTrialDays =
+        trialPeriodDays !== null && trialPeriodDays !== undefined
+          ? trialPeriodDays
+          : defaultTrial || 0;
 
       const subscriptionParams = {
         customer: stripeCustomerId,
@@ -485,43 +575,60 @@ export const stripeService = {
           ...metadata,
           internal_customer_id: customerId,
           internal_plan_id: planId,
+          internal_user_id: userId,
+          customer_email: customer.email,
         },
-        payment_behavior: "default_incomplete",
+        payment_behavior:
+          finalTrialDays > 0 ? "default_incomplete" : "error_if_incomplete",
         payment_settings: {
           save_default_payment_method: "on_subscription",
+          payment_method_types: ["card"],
         },
-        expand: ["latest_invoice.payment_intent"],
+        default_payment_method: paymentMethodId,
+        expand: ["latest_invoice.payment_intent", "customer"],
       };
 
-      // Set trial period
-      if (trialPeriodDays !== null) {
-        subscriptionParams.trial_period_days = trialPeriodDays;
-      } else if (defaultTrial) {
-        subscriptionParams.trial_period_days = defaultTrial;
+      if (finalTrialDays > 0) {
+        subscriptionParams.trial_period_days = finalTrialDays;
+        logger.info("Applying trial period", { days: finalTrialDays });
       }
 
-      // Set payment method if provided
-      if (paymentMethodId) {
-        subscriptionParams.default_payment_method = paymentMethodId;
-      }
-
-      // Apply coupon if provided
       if (couponId) {
         subscriptionParams.coupon = couponId;
       }
 
+      logger.info("Creating Stripe subscription", {
+        customer: stripeCustomerId,
+        price: stripePriceId,
+        trial: finalTrialDays,
+      });
+
       const subscription =
         await stripe.subscriptions.create(subscriptionParams);
 
-      // Save subscription to database
+      logger.info("Stripe subscription created", {
+        subscriptionId: subscription.id,
+        status: subscription.status,
+      });
+
+      const pmIdResult = await db.query(
+        "SELECT id FROM payment_methods WHERE stripe_payment_method_id = $1",
+        [paymentMethodId],
+      );
+      const dbPaymentMethodId = pmIdResult.rows[0]?.id || null;
+
       const subResult = await db.query(
         `INSERT INTO subscriptions (
-                    customer_id, stripe_subscription_id, status, amount, currency,
-                    billing_interval, current_period_start, current_period_end,
-                    trial_end, plan_id, default_payment_method_id, last_event_timestamp,
-                    metadata
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-                RETURNING id`,
+          customer_id, stripe_subscription_id, status, amount, currency,
+          billing_interval, current_period_start, current_period_end,
+          trial_end, plan_id, default_payment_method_id, last_event_timestamp,
+          metadata
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        ON CONFLICT (stripe_subscription_id)
+        DO UPDATE SET
+          status = EXCLUDED.status,
+          updated_at = NOW()
+        RETURNING id`,
         [
           customerId,
           subscription.id,
@@ -535,7 +642,7 @@ export const stripeService = {
             ? new Date(subscription.trial_end * 1000)
             : null,
           planId,
-          paymentMethodId,
+          dbPaymentMethodId,
           Date.now(),
           JSON.stringify(metadata),
         ],
@@ -543,14 +650,23 @@ export const stripeService = {
 
       const subscriptionId = subResult.rows[0].id;
 
-      // Create subscription item record
       await db.query(
         `INSERT INTO subscription_items (subscription_id, plan_id, stripe_subscription_item_id)
-                 VALUES ($1, $2, $3)`,
+        VALUES ($1, $2, $3)
+        ON CONFLICT (stripe_subscription_item_id) DO NOTHING`,
         [subscriptionId, planId, subscription.items.data[0].id],
       );
 
-      // Log event
+      if (
+        subscription.status === "active" ||
+        subscription.status === "trialing"
+      ) {
+        await db.query(
+          "UPDATE customers SET status = 'active', updated_at = NOW() WHERE id = $1",
+          [customerId],
+        );
+      }
+
       await logPaymentEvent({
         eventType: "subscription.created",
         customerId,
@@ -560,20 +676,40 @@ export const stripeService = {
           stripeSubscriptionId: subscription.id,
           status: subscription.status,
           amount: subscription.items.data[0].price.unit_amount,
+          planName: plan.name,
+          trial: finalTrialDays > 0,
         },
         severity: "info",
         source: "api",
+      });
+
+      logger.info("Subscription saved to database", {
+        subscriptionId,
+        stripeSubscriptionId: subscription.id,
+        status: subscription.status,
       });
 
       return {
         subscriptionId,
         stripeSubscriptionId: subscription.id,
         status: subscription.status,
+        amount: subscription.items.data[0].price.unit_amount,
+        currency: subscription.currency,
+        billingInterval: subscription.items.data[0].price.recurring.interval,
+        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        trialEnd: subscription.trial_end
+          ? new Date(subscription.trial_end * 1000)
+          : null,
         clientSecret:
           subscription.latest_invoice?.payment_intent?.client_secret,
       };
     } catch (error) {
-      logger.error("Error creating subscription", { error: error.message });
+      logger.error("Error creating subscription", {
+        error: error.message,
+        stack: error.stack,
+        type: error.type,
+        code: error.code,
+      });
       throw error;
     }
   },
