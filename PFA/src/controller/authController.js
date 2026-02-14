@@ -131,6 +131,7 @@ export const authController = {
 
       // Normalize and validate IP address - handle IPv6 and proxy scenarios
       let ipAddress = req.ip || req.connection?.remoteAddress || null;
+      let hasValidIp = false;
 
       if (ipAddress) {
         // Convert IPv6 loopback to IPv4
@@ -143,41 +144,33 @@ export const authController = {
           /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
         const ipv6Regex = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|::1)$/;
 
-        if (!ipv4Regex.test(ipAddress) && !ipv6Regex.test(ipAddress)) {
+        if (ipv4Regex.test(ipAddress) || ipv6Regex.test(ipAddress)) {
+          hasValidIp = true;
+        } else {
           logger.warn(`[SECURITY] Invalid IP format detected: ${ipAddress}`);
           ipAddress = null;
         }
       }
 
       // Check for failed attempts in the last 15 minutes
-      // Use both IP and email-based rate limiting for security
-      let checkQuery, checkParams;
+      // SECURE: Only check IP-based rate limiting when we have a valid IP
+      // Users without valid IPs rely solely on express-rate-limit middleware
+      let failedAttempts = 0;
 
-      if (ipAddress) {
-        // Standard IP-based rate limiting
-        checkQuery = `SELECT COUNT(*) as count
-                      FROM failed_login_attempts
-                      WHERE ip_address = $1
-                      AND attempt_time > NOW() - INTERVAL '15 minutes'`;
-        checkParams = [ipAddress];
+      if (hasValidIp) {
+        const checkAttempts = await db.query(
+          `SELECT COUNT(*) as count
+           FROM failed_login_attempts
+           WHERE ip_address = $1
+           AND attempt_time > NOW() - INTERVAL '15 minutes'`,
+          [ipAddress],
+        );
+        failedAttempts = parseInt(checkAttempts.rows[0].count, 10);
       } else {
-        // Email-based rate limiting as fallback (when IP unavailable)
-        // This prevents attacks but allows legitimate users from different locations
-        checkQuery = `SELECT COUNT(*) as count
-                      FROM failed_login_attempts
-                      WHERE user_id IN (
-                        SELECT id FROM users WHERE LOWER(email) = $1
-                      )
-                      AND attempt_time > NOW() - INTERVAL '15 minutes'`;
-        checkParams = [email?.toLowerCase()];
-
         logger.warn(
-          `[SECURITY] No valid IP address - using email-based rate limiting for: ${email?.replace(/(.{3}).*(@.*)/, "$1******$2")}`,
+          `[SECURITY] No valid IP for login attempt - relying on express-rate-limit only for: ${email?.replace(/(.{3}).*(@.*)/, "$1******$2")}`,
         );
       }
-
-      const checkAttempts = await db.query(checkQuery, checkParams);
-      const failedAttempts = parseInt(checkAttempts.rows[0].count, 10);
 
       if (failedAttempts >= 5) {
         logger.warn(
@@ -206,23 +199,23 @@ export const authController = {
               const userId =
                 userQuery.rowCount > 0 ? userQuery.rows[0].id : null;
 
-              // Only insert if we have a valid IP address (INET type requirement)
-              if (ipAddress) {
+              // SECURE: Only track IP-based failures when we have a valid IP
+              // This prevents shared rate limit pools and DoS attacks
+              if (hasValidIp && ipAddress) {
                 await db.query(
                   `INSERT INTO failed_login_attempts (user_id, ip_address, attempt_time)
                  VALUES ($1, $2, NOW())`,
                   [userId, ipAddress],
                 );
-              } else {
-                // Log but don't insert if IP is invalid - email-based rate limiting still works
+
                 logger.warn(
-                  `[SECURITY] Failed login attempt without valid IP for email: ${email.replace(/(.{3}).*(@.*)/, "$1******$2")}`,
+                  `[FAILED LOGIN] Failed login attempt for email: ${email.replace(/(.{3}).*(@.*)/, "$1******$2")} from IP: ${ipAddress}`,
+                );
+              } else {
+                logger.warn(
+                  `[FAILED LOGIN] Failed login attempt for email: ${email.replace(/(.{3}).*(@.*)/, "$1******$2")} from unknown IP (protected by express-rate-limit)`,
                 );
               }
-
-              logger.warn(
-                `[FAILED LOGIN] Failed login attempt for email: ${email.replace(/(.{3}).*(@.*)/, "$1******$2")} from IP: ${ipAddress || "unknown"}`,
-              );
             } catch (insertErr) {
               logger.error("[FAILED LOGIN TRACKING ERROR]", {
                 error: insertErr.message,
@@ -238,14 +231,14 @@ export const authController = {
           // Successful login
           // Clear failed attempts for this IP and user
           try {
-            if (ipAddress) {
+            if (hasValidIp && ipAddress) {
               await db.query(
                 `DELETE FROM failed_login_attempts
                WHERE ip_address = $1 OR user_id = $2`,
                 [ipAddress, user.id],
               );
             } else {
-              // Clear only user-based attempts if no IP
+              // Clear only user-based attempts if no valid IP
               await db.query(
                 `DELETE FROM failed_login_attempts WHERE user_id = $1`,
                 [user.id],
