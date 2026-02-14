@@ -717,7 +717,7 @@ CREATE INDEX idx_audit_logs_action ON audit_logs(action);
 CREATE TABLE failed_login_attempts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    ip_address INET NOT NULL,
+    ip_address INET, -- Nullable to support email-based rate limiting when IP unavailable
     attempt_time TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -725,6 +725,8 @@ CREATE INDEX idx_failed_login_attempts_user_id ON failed_login_attempts(user_id)
 CREATE INDEX idx_failed_login_attempts_ip_address ON failed_login_attempts(ip_address);
 CREATE INDEX idx_failed_login_attempts_attempt_time ON failed_login_attempts(attempt_time);
 CREATE INDEX idx_failed_login_attempts_user_ip_time ON failed_login_attempts(user_id, ip_address, attempt_time);
+-- Partial index for better performance when IP is available
+CREATE INDEX idx_failed_login_attempts_ip_address_not_null ON failed_login_attempts(ip_address, attempt_time) WHERE ip_address IS NOT NULL;
 
 -- =====================================================
 -- 28. SESSIONS TABLE
