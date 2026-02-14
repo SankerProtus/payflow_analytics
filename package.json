@@ -1,0 +1,13 @@
+{
+  "name": "payflow-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "cd PFA && npm start",
+    "dev": "cd PFA && npm run dev",
+    "migrate": "cd PFA && npm run migrate"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
