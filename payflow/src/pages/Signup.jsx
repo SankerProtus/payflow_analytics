@@ -222,6 +222,7 @@ const Signup = () => {
               icon={Mail}
               error={errors.email}
               required
+              autocomplete="email"
               className="mb-0"
             />
 
@@ -236,6 +237,7 @@ const Signup = () => {
                 icon={Lock}
                 error={errors.password}
                 required
+                autocomplete="new-password"
                 className="mb-0"
               />
               {passwordStrength && (
@@ -267,6 +269,7 @@ const Signup = () => {
               icon={Lock}
               error={errors.confirmPassword}
               required
+              autocomplete="new-password"
               className="mb-0"
             />
 

@@ -114,6 +114,7 @@ const Login = () => {
               icon={Mail}
               error={errors.email}
               required
+              autocomplete="email"
               className="mb-0"
             />
 
@@ -127,6 +128,7 @@ const Login = () => {
               icon={Lock}
               error={errors.password}
               required
+              autocomplete="current-password"
               className="mb-0"
             />
 
