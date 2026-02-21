@@ -8,4 +8,4 @@ cmds = ["cd PFA && npm ci"]
 cmds = []
 
 [start]
-cmd = "cd PFA && npm start"
+cmd = "cd PFA && npm run migrate && npm start"

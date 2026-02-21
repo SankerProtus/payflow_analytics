@@ -1,15 +1,33 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
 # Vercel
-.vercel
+.vercel/
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
 
 # Environment files
 .env
 .env.local
 .env.*.local
+.env.production
+.env.development
 
 # Editor
 .vscode/
@@ -17,11 +35,21 @@ npm-debug.log*
 *.swp
 *.swo
 *~
+*.sublime-*
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Temporary files
 *.tmp
 *.temp
+
+# Testing
+coverage/
+.nyc_output/
+
+# Database
+*.sqlite
+*.db

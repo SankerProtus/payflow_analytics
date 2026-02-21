@@ -38,9 +38,9 @@ const PaymentMethodForm = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [cardReady, setCardReady] = useState(false);
-  const cardElementRef = useRef(null);
-  const isReadyFired = useRef(false);
   const isMounted = useRef(true);
+  const cardElementRef = useRef(null);
+
   const [billingDetails, setBillingDetails] = useState({
     name: "",
     email: "",
@@ -53,14 +53,43 @@ const PaymentMethodForm = ({
     },
   });
 
-  // Cleanup on unmount
   useEffect(() => {
     isMounted.current = true;
     return () => {
       isMounted.current = false;
-      isReadyFired.current = false;
       cardElementRef.current = null;
     };
+  }, []);
+
+  const handleCardReady = useCallback((element) => {
+    console.log("PaymentMethodForm: CardElement ready event fired");
+    if (isMounted.current) {
+      // Store reference to the element
+      cardElementRef.current = element;
+
+      // Add a small delay to ensure Stripe's internal state is fully ready
+      setTimeout(() => {
+        if (isMounted.current) {
+          setCardReady(true);
+          setError(null);
+          console.log("PaymentMethodForm: CardElement fully ready");
+        }
+      }, 100);
+    }
+  }, []);
+
+  const handleCardChange = useCallback((event) => {
+    if (event.error) {
+      setError(event.error.message);
+    } else {
+      setError(null);
+    }
+
+    // Ensure we track the element even on change events
+    if (event.elementType === "card" && !cardElementRef.current) {
+      console.log("PaymentMethodForm: CardElement detected in change event");
+      setCardReady(true);
+    }
   }, []);
 
   const handleSubmit = async (e) => {
@@ -76,29 +105,29 @@ const PaymentMethodForm = ({
       setError("Stripe is still loading. Please wait a moment and try again.");
       return;
     }
-
     if (!cardReady) {
       setError("Card element is still loading. Please wait a moment.");
       return;
     }
+    if (loading) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      // Get the card element from the Elements context
       const cardElement = elements.getElement(CardElement);
-
       if (!cardElement) {
+        setCardReady(false);
+        console.warn("Element not ready, resetting state");
         throw new Error(
-          "Card element not found. Please refresh the page and try again.",
+          "Card input was reloaded. Please wait for it to finish loading and try again.",
         );
       }
 
-      console.log("Card element found, creating payment method...");
+      // Force a small additional delay to ensure Stripe is ready
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
-      // Add a small delay to ensure the element is fully ready
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      console.log("Card element found, creating payment method...");
 
       const { error: stripeError, paymentMethod } =
         await stripe.createPaymentMethod({
@@ -131,7 +160,6 @@ const PaymentMethodForm = ({
         });
       }
 
-      // Clear the card element
       cardElement.clear();
 
       if (showBillingDetails) {
@@ -148,15 +176,27 @@ const PaymentMethodForm = ({
         });
       }
     } catch (err) {
-      console.error("PaymentMethodForm error:", err);
-      setError(
-        err.message || "An error occurred while adding the payment method",
-      );
+      // If it's a Stripe integration error, mark element as not ready
+      if (err.message && err.message.includes("Element")) {
+        console.error("Element not ready, resetting state");
+        setCardReady(false);
+        cardElementRef.current = null;
+        setError(
+          "Card element lost connection. Please refresh the page and try again.",
+        );
+      } else {
+        console.error("PaymentMethodForm error:", err);
+        setError(
+          err.message || "An error occurred while adding the payment method",
+        );
+      }
       if (onError) {
         onError(err);
       }
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -177,42 +217,6 @@ const PaymentMethodForm = ({
       }));
     }
   };
-
-  // Memoized handlers to prevent unnecessary re-renders
-  const handleCardReady = useCallback(() => {
-    // Prevent multiple ready events from firing
-    if (isReadyFired.current) {
-      return;
-    }
-
-    isReadyFired.current = true;
-    console.log("PaymentMethodForm: CardElement ready event fired");
-
-    // Store the element reference when ready
-    if (elements) {
-      const cardElement = elements.getElement(CardElement);
-      if (cardElement) {
-        cardElementRef.current = cardElement;
-        console.log("PaymentMethodForm: CardElement reference stored");
-      }
-    }
-
-    // Delay to ensure DOM is fully updated and element is ready
-    setTimeout(() => {
-      if (isMounted.current) {
-        setCardReady(true);
-        setError(null);
-      }
-    }, 200);
-  }, [elements]);
-
-  const handleCardChange = useCallback((event) => {
-    if (event.error) {
-      setError(event.error.message);
-    } else if (event.complete) {
-      setError(null);
-    }
-  }, []);
 
   const FormContent = () => (
     <>
@@ -324,7 +328,7 @@ const PaymentMethodForm = ({
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
           <CreditCard className="h-4 w-4" />
           Card Information
         </label>

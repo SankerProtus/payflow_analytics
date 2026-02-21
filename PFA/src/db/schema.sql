@@ -1,15 +1,6 @@
 -- =====================================================
 -- PAYFLOW PAYMENT SYSTEM - COMPREHENSIVE DATABASE SCHEMA
--- =====================================================
--- This schema supports:
--- - User management and authentication
--- - Customer and subscription management
--- - Payment processing and refunds
--- - Invoicing and billing
--- - Dunning and retry logic
--- - Analytics and reporting
--- - Security and audit trails
--- =====================================================
+-- ===============================================
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
@@ -795,17 +786,3 @@ CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON user_settings
 CREATE TRIGGER update_custom_reports_updated_at BEFORE UPDATE ON custom_reports
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- =====================================================
--- PERFORMANCE OPTIMIZATION NOTES
--- =====================================================
--- 1. All foreign keys have indexes for join performance
--- 2. Frequently queried columns have dedicated indexes
--- 3. Partial indexes for WHERE clauses (e.g., WHERE deleted_at IS NULL)
--- 4. Composite indexes for common query patterns
--- 5. TIMESTAMPTZ DESC indexes for time-series queries
--- 6. JSONB columns for flexible metadata storage
--- 7. Proper ENUM types for status fields
--- 8. CHECK constraints for data validation
--- 9. Triggers for automatic updated_at timestamps
--- 10. Cascading deletes for data integrity
--- =====================================================

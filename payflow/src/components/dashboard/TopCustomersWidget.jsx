@@ -57,6 +57,7 @@ const TopCustomersWidget = () => {
         <Trophy className="h-5 w-5 text-primary-600" />
         Top Customers
       </h3>
+
       {topCustomers.length === 0 ? (
         <p className="text-sm text-gray-500 text-center py-4">
           No customer data available
@@ -65,9 +66,17 @@ const TopCustomersWidget = () => {
         <div className="space-y-3">
           {topCustomers.map((customer, index) => {
             const RankIcon = getRankIcon(index);
+
+            const key =
+              customer?.customer_id ??
+              customer?.id ??
+              customer?.stripe_customer_id ??
+              customer?.email ??
+              `${customer?.customer_name ?? "customer"}-${index}`;
+
             return (
               <div
-                key={customer.customer_id}
+                key={key}
                 className="flex items-center justify-between pb-3 border-b border-gray-100 last:border-0"
               >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -83,6 +92,7 @@ const TopCustomersWidget = () => {
                     </p>
                   </div>
                 </div>
+
                 <div className="text-right flex-shrink-0 ml-2">
                   <p className="text-sm font-semibold text-gray-900">
                     {formatCurrency(customer.total_revenue)}
