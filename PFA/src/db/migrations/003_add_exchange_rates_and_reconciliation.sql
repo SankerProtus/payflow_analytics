@@ -168,9 +168,8 @@ END;
 $$ LANGUAGE plpgsql STABLE;
 
 -- Insert default exchange rates (1:1 for USD)
-INSERT INTO exchange_rates (base_currency, target_currency, rate, effective_date, source)
-VALUES ('usd', 'usd', 1.0, CURRENT_DATE, 'manual')
-ON CONFLICT (base_currency, target_currency, effective_date) DO NOTHING;
+-- Note: Same-currency rates (usd->usd) are handled by get_exchange_rate function
+-- and don't need to be stored due to CHECK constraint
 
 -- Add trigger for updated_at on exchange_rates
 CREATE TRIGGER update_exchange_rates_updated_at
