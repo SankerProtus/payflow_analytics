@@ -149,11 +149,13 @@ Or use: `payflow-jwt-secret-2026-secure-random-key-CHANGE-THIS`
 ### Stripe Keys
 
 **Test Mode (Development):**
+
 1. Go to https://dashboard.stripe.com/test/apikeys
 2. Copy "Publishable key" (starts with `pk_test_`)
 3. Copy "Secret key" (starts with `sk_test_`)
 
 **Live Mode (Production):**
+
 1. Go to https://dashboard.stripe.com/apikeys
 2. Copy "Publishable key" (starts with `pk_live_`)
 3. Copy "Secret key" (starts with `sk_live_`)
@@ -215,8 +217,9 @@ curl https://your-railway-url.up.railway.app/health
 ```
 
 Expected response:
+
 ```json
-{"status":"ok","message":"PayFlow API is running"}
+{ "status": "ok", "message": "PayFlow API is running" }
 ```
 
 ### Check Frontend Can Reach Backend
@@ -243,6 +246,7 @@ Should see: `✓ Schema created successfully`
 ### "Database connection failed"
 
 **Check:**
+
 - PostgreSQL is running
 - Database credentials are correct
 - `PG_SSL=true` in production, `false` in development
@@ -250,12 +254,14 @@ Should see: `✓ Schema created successfully`
 ### "CORS error"
 
 **Check:**
+
 - `CORS_ORIGIN` matches frontend URL exactly (no trailing slash)
 - Frontend is using correct `VITE_API_URL`
 
 ### "Email not sending"
 
 **Check:**
+
 - Gmail app password is correct (not regular password)
 - 2FA is enabled on Google account
 - Check spam folder
@@ -263,6 +269,7 @@ Should see: `✓ Schema created successfully`
 ### "Stripe error"
 
 **Check:**
+
 - Using test keys in development (`pk_test_`, `sk_test_`)
 - Keys match (test with test, live with live)
 - Stripe products are created (`npm run setup-stripe`)

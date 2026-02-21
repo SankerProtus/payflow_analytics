@@ -74,11 +74,13 @@ STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
 ```
 
 **Generate JWT_SECRET:**
+
 ```bash
 openssl rand -base64 32
 ```
 
 **Gmail App Password:**
+
 1. Enable 2-Factor Authentication on your Google account
 2. Go to https://myaccount.google.com/apppasswords
 3. Generate an app password for "Mail"
@@ -91,6 +93,7 @@ railway up
 ```
 
 The app will automatically:
+
 - Run database migrations
 - Create all tables and schemas
 - Start the server
@@ -122,6 +125,7 @@ railway run npm run setup-stripe
 ```
 
 This creates:
+
 - 3 products in Stripe (Basic, Pro, Enterprise)
 - Monthly and yearly prices for each
 - Updates database with real Stripe price IDs
@@ -158,11 +162,13 @@ Follow prompts to link your project.
 In Vercel Dashboard → Your Project → Settings → Environment Variables:
 
 **Add:**
+
 - **Name:** `VITE_API_URL`
 - **Value:** `https://your-railway-url.up.railway.app/api`
 - **Environments:** Production, Preview, Development
 
 **Add:**
+
 - **Name:** `VITE_STRIPE_PUBLISHABLE_KEY`
 - **Value:** `pk_test_your_publishable_key`
 - **Environments:** Production, Preview, Development
@@ -186,6 +192,7 @@ vercel --prod
 ### 4.2 Select Events
 
 Enable these events:
+
 - `customer.subscription.created`
 - `customer.subscription.updated`
 - `customer.subscription.deleted`
@@ -201,6 +208,7 @@ Copy the webhook signing secret (starts with `whsec_`)
 ### 4.4 Update Railway
 
 Add to Railway environment variables:
+
 ```
 STRIPE_WEBHOOK_SECRET=whsec_your_secret_here
 ```
@@ -238,6 +246,7 @@ curl https://your-railway-url.up.railway.app/health
 **Problem:** Frontend can't reach backend
 
 **Solutions:**
+
 1. Check `CORS_ORIGIN` in Railway matches your Vercel URL exactly
 2. Check `VITE_API_URL` in Vercel ends with `/api`
 3. Redeploy both after changing environment variables
@@ -247,6 +256,7 @@ curl https://your-railway-url.up.railway.app/health
 **Problem:** Backend can't connect to PostgreSQL
 
 **Solutions:**
+
 1. Verify PostgreSQL service is running in Railway
 2. Check database variables are correctly referenced
 3. Ensure `PG_SSL=true` in production
@@ -256,6 +266,7 @@ curl https://your-railway-url.up.railway.app/health
 **Problem:** Verification emails not arriving
 
 **Solutions:**
+
 1. Verify Gmail app password is correct
 2. Check spam folder
 3. View Railway logs for email errors
@@ -265,6 +276,7 @@ curl https://your-railway-url.up.railway.app/health
 **Problem:** Tables don't exist
 
 **Solutions:**
+
 1. Check `nixpacks.toml` has the migration command
 2. Manually run: `railway run npm run migrate`
 3. View Railway logs for migration errors
@@ -306,6 +318,7 @@ git push  # Railway auto-deploys on push
 ```
 
 Or manually:
+
 ```bash
 railway up
 ```

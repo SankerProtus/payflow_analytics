@@ -29,7 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 // Configure allowed origins for CORS
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://pay-flow-tawny.vercel.app",
+  "https://payflow-analytics-ochre.vercel.app",
   process.env.CORS_ORIGIN,
 ].filter(Boolean);
 
