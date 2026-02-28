@@ -24,7 +24,7 @@ CREATE INDEX IF NOT EXISTS idx_subscription_state_transitions_created_at
 CREATE TABLE IF NOT EXISTS subscription_idempotency_keys (
   id SERIAL PRIMARY KEY,
   idempotency_key VARCHAR(255) NOT NULL UNIQUE,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   subscription_id INTEGER REFERENCES subscriptions(id) ON DELETE SET NULL,
   plan_id INTEGER REFERENCES subscription_plans(id) ON DELETE CASCADE,

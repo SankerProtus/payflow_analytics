@@ -59,18 +59,7 @@ ON CONFLICT (id) DO NOTHING;
 -- =====================================================
 INSERT INTO customers (id, user_id, stripe_customer_id, email, name, created_at)
 VALUES
-  -- Active paying customers
-  ('50000001-0000-0000-0000-000000000001', 'b1ac4c23-b2b0-40bb-9fca-3bcd5e18c048', 'cus_tech_001', 'alice.johnson@company-a.com', 'Alice Johnson', NOW() - INTERVAL '180 days'),
-  ('50000002-0000-0000-0000-000000000002', 'b1ac4c23-b2b0-40bb-9fca-3bcd5e18c048', 'cus_tech_002', 'bob.smith@company-b.com', 'Bob Smith', NOW() - INTERVAL '175 days'),
-  ('50000003-0000-0000-0000-000000000003', 'b1ac4c23-b2b0-40bb-9fca-3bcd5e18c048', 'cus_tech_003', 'carol.davis@company-c.com', 'Carol Davis', NOW() - INTERVAL '170 days'),
-  ('50000004-0000-0000-0000-000000000004', 'b1ac4c23-b2b0-40bb-9fca-3bcd5e18c048', 'cus_tech_004', 'david.wilson@company-d.com', 'David Wilson', NOW() - INTERVAL '165 days'),
-  ('50000005-0000-0000-0000-000000000005', 'b1ac4c23-b2b0-40bb-9fca-3bcd5e18c048', 'cus_tech_005', 'emma.brown@company-e.com', 'Emma Brown', NOW() - INTERVAL '160 days'),
-  ('50000006-0000-0000-0000-000000000006', 'b1ac4c23-b2b0-40bb-9fca-3bcd5e18c048', 'cus_tech_006', 'frank.miller@company-f.com', 'Frank Miller', NOW() - INTERVAL '155 days'),
-  ('50000007-0000-0000-0000-000000000007', 'b1ac4c23-b2b0-40bb-9fca-3bcd5e18c048', 'cus_tech_007', 'grace.lee@company-g.com', 'Grace Lee', NOW() - INTERVAL '150 days'),
-  ('50000008-0000-0000-0000-000000000008', 'b1ac4c23-b2b0-40bb-9fca-3bcd5e18c048', 'cus_tech_008', 'henry.garcia@company-h.com', 'Henry Garcia', NOW() - INTERVAL '145 days'),
-  ('50000009-0000-0000-0000-000000000009', 'b1ac4c23-b2b0-40bb-9fca-3bcd5e18c048', 'cus_tech_009', 'iris.martinez@company-i.com', 'Iris Martinez', NOW() - INTERVAL '140 days'),
-  ('50000010-0000-0000-0000-000000000010', 'b1ac4c23-b2b0-40bb-9fca-3bcd5e18c048', 'cus_tech_010', 'jack.anderson@company-j.com', 'Jack Anderson', NOW() - INTERVAL '135 days'),
-  ('50000011-0000-0000-0000-000000000011', 'b1ac4c23-b2b0-40bb-9fca-3bcd5e18c048', 'cus_tech_011', 'karen.thomas@company-k.com', 'Karen Thomas', NOW() - INTERVAL '130 days'),
+    -- ...existing code...
   ('50000012-0000-0000-0000-000000000012', 'b1ac4c23-b2b0-40bb-9fca-3bcd5e18c048', 'cus_tech_012', 'leo.jackson@company-l.com', 'Leo Jackson', NOW() - INTERVAL '125 days'),
   ('50000013-0000-0000-0000-000000000013', 'b1ac4c23-b2b0-40bb-9fca-3bcd5e18c048', 'cus_tech_013', 'maria.white@company-m.com', 'Maria White', NOW() - INTERVAL '120 days'),
   ('50000014-0000-0000-0000-000000000014', 'b1ac4c23-b2b0-40bb-9fca-3bcd5e18c048', 'cus_tech_014', 'nathan.harris@company-n.com', 'Nathan Harris', NOW() - INTERVAL '115 days'),
