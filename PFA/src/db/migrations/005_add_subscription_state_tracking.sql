@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS subscription_idempotency_keys (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   subscription_id UUID REFERENCES subscriptions(id) ON DELETE SET NULL,
-  plan_id INTEGER REFERENCES subscription_plans(id) ON DELETE CASCADE,
+  plan_id UUID REFERENCES subscription_plans(id) ON DELETE CASCADE,
   status VARCHAR(50) DEFAULT 'pending', -- pending, completed, failed
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
   expires_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP + INTERVAL '24 hours',
