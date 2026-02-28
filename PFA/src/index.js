@@ -9,7 +9,6 @@ import { customerRoutes } from "./routes/customerRoutes.js";
 import { dunningRoutes } from "./routes/dunningRoutes.js";
 import { webhookRoutes } from "./routes/webhookRoutes.js";
 import { billingRoutes } from "./routes/billingRoutes.js";
-import { subscriptionRoutes } from "./routes/subscriptionRoutes.js";
 import { migrationRoutes } from "./routes/migrationRoutes.js";
 import { closeDBConnection } from "./db/connection.js";
 import { logger } from "./utils/logger.js";
@@ -63,7 +62,6 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/dunning", dunningRoutes);
 app.use("/api/billing", billingRoutes);
-app.use("/api/subscriptions", subscriptionRoutes);
 
 // Migration endpoint (admin only - remove in production or add auth)
 if (

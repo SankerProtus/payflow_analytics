@@ -1,7 +1,9 @@
 import { useContext } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Elements } from "@stripe/react-stripe-js";
 import { AuthContext } from "./context/AuthContext";
 import { AuthProvider } from "./context/AuthProvider";
+import { stripePromise } from "./lib/stripe";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
@@ -163,7 +165,10 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        {/* Stripe Elements provider at app level - available to all pages */}
+        <Elements stripe={stripePromise}>
+          <AppRoutes />
+        </Elements>
       </AuthProvider>
     </BrowserRouter>
   );

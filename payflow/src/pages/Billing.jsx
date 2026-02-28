@@ -4,8 +4,6 @@
  */
 
 import { useState } from "react";
-import { Elements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
 import { CreditCard, FileText, Package, Plus } from "lucide-react";
 import Layout from "../components/layout/Layout";
 import Card from "../components/common/Card";
@@ -14,21 +12,21 @@ import PaymentMethodForm from "../components/billing/PaymentMethodForm";
 import PaymentMethodList from "../components/billing/PaymentMethodList";
 import InvoiceList from "../components/billing/InvoiceList";
 import SubscriptionCard from "../components/billing/SubscriptionCard";
-import CreateSubscriptionModal from "../components/billing/CreateSubscriptionModal";
+import CreateSubscriptionWizard from "../components/billing/CreateSubscriptionWizard";
 import { paymentAPI } from "../api/payment.api";
 import { useCustomerData } from "../hooks/useCustomerData";
 import { useSubscriptions } from "../hooks/useSubscriptions";
 import Loader from "../components/common/Loader";
 import ErrorMessage from "../components/common/ErrorMessage";
 
-// Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-
 const Billing = () => {
   const [activeTab, setActiveTab] = useState("payment-methods");
   const [showAddPaymentMethod, setShowAddPaymentMethod] = useState(false);
   const [showCreateSubscription, setShowCreateSubscription] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // CRITICAL: Unique key for PaymentMethodForm to ensure clean Stripe Element remount
+  const [paymentFormKey, setPaymentFormKey] = useState(0);
 
   // Get customer data from hook
   const {
@@ -191,8 +189,8 @@ const Billing = () => {
           </Card>
         </div>
 
-        {/* Create Subscription Modal */}
-        <CreateSubscriptionModal
+        {/* Create Subscription Wizard */}
+        <CreateSubscriptionWizard
           isOpen={showCreateSubscription}
           onClose={() => setShowCreateSubscription(false)}
           onSuccess={handleSubscriptionCreated}
@@ -249,7 +247,10 @@ const Billing = () => {
                 </h2>
                 <Button
                   variant="primary"
-                  onClick={() => setShowAddPaymentMethod(!showAddPaymentMethod)}
+                  onClick={() => {
+                    setPaymentFormKey((prev) => prev + 1);
+                    setShowAddPaymentMethod(!showAddPaymentMethod);
+                  }}
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add Payment Method
@@ -261,15 +262,14 @@ const Billing = () => {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
                     Add New Payment Method
                   </h3>
-                  <Elements stripe={stripePromise}>
-                    <PaymentMethodForm
-                      key={`payment-form-${customerId}`}
-                      customerId={customerId}
-                      onSuccess={handlePaymentMethodAdded}
-                      onError={(error) => console.error(error)}
-                      setAsDefault={true}
-                    />
-                  </Elements>
+                  {/* Elements provider at App level - no wrapper needed here */}
+                  <PaymentMethodForm
+                    key={`payment-form-${customerId}-${paymentFormKey}`}
+                    customerId={customerId}
+                    onSuccess={handlePaymentMethodAdded}
+                    onError={(error) => console.error(error)}
+                    setAsDefault={true}
+                  />
                 </Card>
               )}
 
@@ -346,7 +346,7 @@ const Billing = () => {
       </div>
 
       {/* Modals */}
-      <CreateSubscriptionModal
+      <CreateSubscriptionWizard
         isOpen={showCreateSubscription}
         onClose={() => setShowCreateSubscription(false)}
         onSuccess={handleSubscriptionCreated}

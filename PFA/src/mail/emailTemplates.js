@@ -1,22 +1,66 @@
-// SEND EMAIL VERIFICATION HTML TEMPLATE
+// PROFESSIONAL EMAIL VERIFICATION TEMPLATE
 export const verificationEmailTemplate = (token) => `
-  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; line-height: 1.6;">
-    <h2 style="color: #2563eb;">Welcome to PayFlow Analytics!</h2>
-    <p style="font-size: 14px; color: #6b7280;" >Thank you for registering with us. To complete your registration, please verify your email address.</p>
+  <div style="background-color:#f9fafb; padding:40px 0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
 
-    <div style="background-color: #f3f4f6; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
-      <p style="margin: 0 0 10px 0; font-size: 14px; color: #6b7280;">Your verification code is:</p>
-      <div style="background-color: #ffffff; border: 2px solid #2563eb; border-radius: 8px; padding: 15px; display: inline-block;">
-        <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2563eb; font-family: monospace;">${token}</span>
-      </div>
-      <p style="margin: 10px 0 0 0; font-size: 12px; color: #9ca3af;">This code will expire in 20 minutes</p>
-    </div>
+    <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background-color:#ffffff; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.05); overflow:hidden;">
 
-    <p style="font-size: 14px; color: #6b7280;">Enter this code on the verification page to activate your account.</p>
-    <p style="font-size: 14px; color: #6b7280;">If you did not create an account, please ignore this email.</p>
+      <tr>
+        <td style="padding:40px 40px 20px 40px; text-align:left;">
+          <h2 style="margin:0; font-size:22px; font-weight:600; color:#111827;">
+            Verify Your Email Address
+          </h2>
+          <p style="margin:12px 0 0 0; font-size:14px; color:#4b5563; line-height:1.6;">
+            Thank you for choosing <strong>PayFlow Analytics</strong>.
+            To activate your account and secure your access, please use the verification code below.
+          </p>
+        </td>
+      </tr>
 
-    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-    <p style="font-size: 12px; color: #9ca3af;">Best regards,<br><strong>PayFlow Team</strong></p>
+      <tr>
+        <td style="padding:20px 40px;">
+          <div style="background-color:#f3f4f6; border-radius:10px; padding:30px; text-align:center;">
+
+            <p style="margin:0 0 12px 0; font-size:13px; color:#6b7280; text-transform:uppercase; letter-spacing:1px;">
+              Verification Code
+            </p>
+
+            <div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:18px 0; display:inline-block; min-width:200px;">
+              <span style="font-size:30px; font-weight:600; letter-spacing:10px; color:#111827; font-family:monospace;">
+                ${token}
+              </span>
+            </div>
+
+            <p style="margin:14px 0 0 0; font-size:12px; color:#9ca3af;">
+              This code expires in 20 minutes.
+            </p>
+          </div>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="padding:10px 40px 30px 40px;">
+          <p style="margin:0; font-size:14px; color:#4b5563; line-height:1.6;">
+            Enter this code on the verification page to complete your registration.
+          </p>
+
+          <p style="margin:16px 0 0 0; font-size:13px; color:#6b7280;">
+            If you did not request this email, you may safely ignore it.
+          </p>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="padding:20px 40px; border-top:1px solid #e5e7eb; text-align:left;">
+          <p style="margin:0; font-size:12px; color:#9ca3af; line-height:1.6;">
+            © ${new Date().getFullYear()} PayFlow Analytics. All rights reserved.
+          </p>
+          <p style="margin:6px 0 0 0; font-size:12px; color:#9ca3af;">
+            Secure financial infrastructure for modern businesses.
+          </p>
+        </td>
+      </tr>
+
+    </table>
   </div>
 `;
 
@@ -35,7 +79,14 @@ export const passwordResetEmailTemplate = (token) => `
 /**
  * Subscription created email
  */
-export const subscriptionCreatedEmail = ({ customerName, planName, amount, currency, billingPeriod, trialEnd }) => `
+export const subscriptionCreatedEmail = ({
+  customerName,
+  planName,
+  amount,
+  currency,
+  billingPeriod,
+  trialEnd,
+}) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; line-height: 1.6;">
     <h2 style="color: #10b981;">Welcome to PayFlow!</h2>
     <p>Hi ${customerName},</p>
@@ -45,7 +96,7 @@ export const subscriptionCreatedEmail = ({ customerName, planName, amount, curre
       <h3 style="margin-top: 0; color: #374151;">Subscription Details</h3>
       <p style="margin: 8px 0;"><strong>Plan:</strong> ${planName}</p>
       <p style="margin: 8px 0;"><strong>Amount:</strong> ${amount} ${currency} / ${billingPeriod}</p>
-      ${trialEnd ? `<p style="margin: 8px 0;"><strong>Trial Ends:</strong> ${trialEnd.toLocaleDateString()}</p>` : ''}
+      ${trialEnd ? `<p style="margin: 8px 0;"><strong>Trial Ends:</strong> ${trialEnd.toLocaleDateString()}</p>` : ""}
     </div>
 
     <p>You can manage your subscription anytime from your account dashboard.</p>
@@ -73,7 +124,13 @@ export const subscriptionCanceledEmail = ({ customerName, endDate }) => `
 /**
  * Trial ending soon email
  */
-export const trialEndingSoonEmail = ({ customerName, trialEndDate, planName, amount, currency }) => `
+export const trialEndingSoonEmail = ({
+  customerName,
+  trialEndDate,
+  planName,
+  amount,
+  currency,
+}) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; line-height: 1.6;">
     <h2 style="color: #f59e0b;">Your Trial is Ending Soon</h2>
     <p>Hi ${customerName},</p>
@@ -93,7 +150,15 @@ export const trialEndingSoonEmail = ({ customerName, trialEndDate, planName, amo
 /**
  * Invoice paid email (receipt)
  */
-export const invoicePaidEmail = ({ customerName, invoiceNumber, amount, currency, paidDate, invoiceUrl, pdfUrl }) => `
+export const invoicePaidEmail = ({
+  customerName,
+  invoiceNumber,
+  amount,
+  currency,
+  paidDate,
+  invoiceUrl,
+  pdfUrl,
+}) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; line-height: 1.6;">
     <h2 style="color: #10b981;">Payment Received</h2>
     <p>Hi ${customerName},</p>
@@ -106,8 +171,8 @@ export const invoicePaidEmail = ({ customerName, invoiceNumber, amount, currency
       <p style="margin: 8px 0;"><strong>Date:</strong> ${paidDate.toLocaleDateString()}</p>
     </div>
 
-    ${invoiceUrl ? `<p><a href="${invoiceUrl}" style="color: #2563eb;">View Invoice Online</a></p>` : ''}
-    ${pdfUrl ? `<p><a href="${pdfUrl}" style="color: #2563eb;">Download PDF Receipt</a></p>` : ''}
+    ${invoiceUrl ? `<p><a href="${invoiceUrl}" style="color: #2563eb;">View Invoice Online</a></p>` : ""}
+    ${pdfUrl ? `<p><a href="${pdfUrl}" style="color: #2563eb;">Download PDF Receipt</a></p>` : ""}
 
     <p style="margin-top: 30px;">Best regards,<br><strong>PayFlow Team</strong></p>
   </div>
@@ -116,7 +181,14 @@ export const invoicePaidEmail = ({ customerName, invoiceNumber, amount, currency
 /**
  * Invoice payment failed email
  */
-export const invoicePaymentFailedEmail = ({ customerName, amount, currency, failureReason, retryCount, updatePaymentUrl }) => `
+export const invoicePaymentFailedEmail = ({
+  customerName,
+  amount,
+  currency,
+  failureReason,
+  retryCount,
+  updatePaymentUrl,
+}) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; line-height: 1.6;">
     <h2 style="color: #ef4444;">Payment Failed - Action Required</h2>
     <p>Hi ${customerName},</p>
@@ -124,7 +196,7 @@ export const invoicePaymentFailedEmail = ({ customerName, amount, currency, fail
 
     <div style="background-color: #fee2e2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0;">
       <p style="margin: 0;"><strong>Reason:</strong> ${failureReason}</p>
-      ${retryCount > 1 ? `<p style="margin: 8px 0 0 0;"><strong>Retry Attempt:</strong> ${retryCount}</p>` : ''}
+      ${retryCount > 1 ? `<p style="margin: 8px 0 0 0;"><strong>Retry Attempt:</strong> ${retryCount}</p>` : ""}
     </div>
 
     <p><strong>What happens next:</strong></p>
@@ -148,7 +220,12 @@ export const invoicePaymentFailedEmail = ({ customerName, amount, currency, fail
 /**
  * Payment succeeded email
  */
-export const paymentSucceededEmail = ({ customerName, amount, currency, description }) => `
+export const paymentSucceededEmail = ({
+  customerName,
+  amount,
+  currency,
+  description,
+}) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; line-height: 1.6;">
     <h2 style="color: #10b981;">Payment Successful</h2>
     <p>Hi ${customerName},</p>
@@ -156,7 +233,7 @@ export const paymentSucceededEmail = ({ customerName, amount, currency, descript
 
     <div style="background-color: #f3f4f6; border-radius: 8px; padding: 20px; margin: 20px 0;">
       <p style="margin: 8px 0;"><strong>Amount:</strong> ${amount} ${currency}</p>
-      ${description ? `<p style="margin: 8px 0;"><strong>Description:</strong> ${description}</p>` : ''}
+      ${description ? `<p style="margin: 8px 0;"><strong>Description:</strong> ${description}</p>` : ""}
     </div>
 
     <p style="margin-top: 30px;">Best regards,<br><strong>PayFlow Team</strong></p>
@@ -166,7 +243,12 @@ export const paymentSucceededEmail = ({ customerName, amount, currency, descript
 /**
  * Payment failed email
  */
-export const paymentFailedEmail = ({ customerName, amount, currency, failureReason }) => `
+export const paymentFailedEmail = ({
+  customerName,
+  amount,
+  currency,
+  failureReason,
+}) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; line-height: 1.6;">
     <h2 style="color: #ef4444;">Payment Failed</h2>
     <p>Hi ${customerName},</p>
@@ -181,4 +263,3 @@ export const paymentFailedEmail = ({ customerName, amount, currency, failureReas
     <p style="margin-top: 30px;">Best regards,<br><strong>PayFlow Team</strong></p>
   </div>
 `;
-

@@ -35,11 +35,21 @@ const PaymentMethodForm = ({
   const stripe = useStripe();
   const elements = useElements();
 
+  // CRITICAL: Use refs to prevent stale closures in async handlers
+  // Initialize with current values immediately to avoid race conditions
+  const stripeRef = useRef(stripe);
+  const elementsRef = useRef(elements);
+
+  // CRITICAL: Update refs synchronously on every render
+  // This ensures refs are always current, even before useEffect runs
+  stripeRef.current = stripe;
+  elementsRef.current = elements;
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [cardReady, setCardReady] = useState(false);
   const isMounted = useRef(true);
-  const cardElementRef = useRef(null);
+  const cardElementInstanceRef = useRef(null);
 
   const [billingDetails, setBillingDetails] = useState({
     name: "",
@@ -53,28 +63,35 @@ const PaymentMethodForm = ({
     },
   });
 
+  // Proper lifecycle management
   useEffect(() => {
     isMounted.current = true;
+
+    // CRITICAL: Reset cardReady on mount to handle StrictMode double-mount
+    setCardReady(false);
+    setError(null);
+    cardElementInstanceRef.current = null;
+
     return () => {
+      // Cleanup on unmount
       isMounted.current = false;
-      cardElementRef.current = null;
+      setCardReady(false);
+      cardElementInstanceRef.current = null;
     };
   }, []);
 
-  const handleCardReady = useCallback((element) => {
-    console.log("PaymentMethodForm: CardElement ready event fired");
-    if (isMounted.current) {
-      // Store reference to the element
-      cardElementRef.current = element;
+  const handleCardReady = useCallback(() => {
+    // CRITICAL: Store the actual element instance that just became ready
+    // This prevents accessing a destroyed element instance
+    if (isMounted.current && elementsRef.current) {
+      // Verify we can actually get the element
+      const cardElement = elementsRef.current.getElement(CardElement);
 
-      // Add a small delay to ensure Stripe's internal state is fully ready
-      setTimeout(() => {
-        if (isMounted.current) {
-          setCardReady(true);
-          setError(null);
-          console.log("PaymentMethodForm: CardElement fully ready");
-        }
-      }, 100);
+      if (cardElement) {
+        cardElementInstanceRef.current = cardElement;
+        setCardReady(true);
+        setError(null);
+      }
     }
   }, []);
 
@@ -84,74 +101,77 @@ const PaymentMethodForm = ({
     } else {
       setError(null);
     }
-
-    // Ensure we track the element even on change events
-    if (event.elementType === "card" && !cardElementRef.current) {
-      console.log("PaymentMethodForm: CardElement detected in change event");
-      setCardReady(true);
-    }
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("PaymentMethodForm: handleSubmit called", {
-      stripe: !!stripe,
-      elements: !!elements,
-      cardReady,
-    });
-
-    if (!stripe || !elements) {
+    // DEFENSE LAYER 1: Validate Stripe SDK is loaded
+    if (!stripeRef.current || !elementsRef.current) {
+      console.error("[Submit] ❌ Stripe/Elements not loaded");
       setError("Stripe is still loading. Please wait a moment and try again.");
       return;
     }
+
+    // DEFENSE LAYER 2: Validate card element fired ready event
     if (!cardReady) {
+      console.error("[Submit] ❌ Card not ready");
       setError("Card element is still loading. Please wait a moment.");
       return;
     }
+
+    // DEFENSE LAYER 3: Validate we have the actual element instance
+    if (!cardElementInstanceRef.current) {
+      console.error("[Submit] ❌ No stored instance");
+      setError("Card element is not ready. Please try again.");
+      return;
+    }
+
+    // Prevent double submission
     if (loading) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const cardElement = elements.getElement(CardElement);
+      // DEFENSE LAYER 4: Verify element still exists at submission time
+      // Use fresh retrieval as final check (race condition protection)
+      const cardElement = elementsRef.current.getElement(CardElement);
+
       if (!cardElement) {
-        setCardReady(false);
-        console.warn("Element not ready, resetting state");
+        // Element was unmounted between ready and submit
         throw new Error(
-          "Card input was reloaded. Please wait for it to finish loading and try again.",
+          "Card element is no longer available. Please try again.",
         );
       }
 
-      // Force a small additional delay to ensure Stripe is ready
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      // DEFENSE LAYER 5: Ensure we're using the same instance
+      if (cardElement !== cardElementInstanceRef.current) {
+        throw new Error(
+          "Card element instance changed. Please refresh and try again.",
+        );
+      }
 
-      console.log("Card element found, creating payment method...");
-
+      // Create payment method with Stripe using ref (prevents stale closure)
       const { error: stripeError, paymentMethod } =
-        await stripe.createPaymentMethod({
+        await stripeRef.current.createPaymentMethod({
           type: "card",
           card: cardElement,
           billing_details: showBillingDetails ? billingDetails : undefined,
         });
 
       if (stripeError) {
-        console.error("Stripe error:", stripeError);
         throw new Error(stripeError.message);
       }
 
-      console.log("Payment method created:", paymentMethod.id);
-      console.log("Attaching to customer:", customerId);
-
+      // Attach payment method to customer
       await paymentAPI.attachPaymentMethod({
         customerId,
         paymentMethodId: paymentMethod.id,
         setAsDefault,
       });
 
-      console.log("Payment method attached successfully");
-
+      // Success callback
       if (onSuccess) {
         await onSuccess({
           paymentMethodId: paymentMethod.id,
@@ -160,6 +180,7 @@ const PaymentMethodForm = ({
         });
       }
 
+      // Clear the form
       cardElement.clear();
 
       if (showBillingDetails) {
@@ -176,20 +197,11 @@ const PaymentMethodForm = ({
         });
       }
     } catch (err) {
-      // If it's a Stripe integration error, mark element as not ready
-      if (err.message && err.message.includes("Element")) {
-        console.error("Element not ready, resetting state");
-        setCardReady(false);
-        cardElementRef.current = null;
-        setError(
-          "Card element lost connection. Please refresh the page and try again.",
-        );
-      } else {
-        console.error("PaymentMethodForm error:", err);
-        setError(
-          err.message || "An error occurred while adding the payment method",
-        );
-      }
+      console.error("PaymentMethodForm error:", err);
+      const errorMessage =
+        err.message || "An error occurred while adding the payment method";
+      setError(errorMessage);
+
       if (onError) {
         onError(err);
       }

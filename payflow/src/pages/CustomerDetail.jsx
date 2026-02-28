@@ -6,7 +6,7 @@ import Timeline from "../components/customers/Timeline";
 import StatusBadge from "../components/customers/StatusBadge";
 import Button from "../components/common/Button";
 import Card from "../components/common/Card";
-import CreateSubscriptionModal from "../components/billing/CreateSubscriptionModal";
+import CreateSubscriptionWizard from "../components/billing/CreateSubscriptionWizard";
 import { useCustomerDetail } from "../hooks/useCustomers";
 import Loader from "../components/common/Loader";
 import ErrorMessage from "../components/common/ErrorMessage";
@@ -163,7 +163,7 @@ const CustomerDetail = () => {
       </div>
 
       {/* Modals */}
-      <CreateSubscriptionModal
+      <CreateSubscriptionWizard
         isOpen={showCreateSubscription}
         onClose={() => setShowCreateSubscription(false)}
         onSuccess={handleSubscriptionCreated}
