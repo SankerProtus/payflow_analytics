@@ -8,23 +8,15 @@ import {
   logPaymentEvent,
   addBillingHistoryEntry,
 } from "../service/paymentEvents.service.js";
-import { sendEmail } from "../mail/email.service.js";
-import {
-  subscriptionCreatedEmail,
-  subscriptionCanceledEmail,
-  trialEndingSoonEmail,
-  invoicePaidEmail,
-  invoicePaymentFailedEmail,
-} from "../mail/emailTemplates.js";
 const db = getDBConnection();
 
-  // Get user's Stripe webhook secret
+// Get user's Stripe webhook secret
 async function getWebhookSecret(userId = null) {
   // For global webhook endpoint
   return process.env.STRIPE_WEBHOOK_SECRET;
 }
 
-  // Verify Stripe webhook signature
+// Verify Stripe webhook signature
 function verifyWebhookSignature(payload, signature, secret) {
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -38,7 +30,7 @@ function verifyWebhookSignature(payload, signature, secret) {
   }
 }
 
-  // Check if event has already been processed (idempotency)
+// Check if event has already been processed (idempotency)
 async function isEventProcessed(eventId) {
   const result = await db.query(
     "SELECT id FROM stripe_events WHERE stripe_event_id = $1 AND processed_at IS NOT NULL",
@@ -47,7 +39,7 @@ async function isEventProcessed(eventId) {
   return result.rows.length > 0;
 }
 
-  // Store incoming event in database
+// Store incoming event in database
 async function storeEvent(event) {
   const result = await db.query(
     `INSERT INTO stripe_events (stripe_event_id, type, api_version, payload)
@@ -59,7 +51,7 @@ async function storeEvent(event) {
   return result.rows[0]?.id;
 }
 
-  // Mark event as processed
+// Mark event as processed
 async function markEventProcessed(eventId, error = null) {
   await db.query(
     "UPDATE stripe_events SET processed_at = NOW(), error = $1 WHERE stripe_event_id = $2",
@@ -69,7 +61,7 @@ async function markEventProcessed(eventId, error = null) {
 
 // EVENT HANDLERS
 
-  // Handle customer.subscription.created
+// Handle customer.subscription.created
 async function handleSubscriptionCreated(event) {
   const subscription = event.data.object;
   const customerId = subscription.metadata?.internal_customer_id;
@@ -104,20 +96,10 @@ async function handleSubscriptionCreated(event) {
 
   const { email, name, user_id } = customerData.rows[0];
 
-  // Send welcome email
-  await sendEmail({
-    to: email,
-    subject: "Welcome to PayFlow - Subscription Activated",
-    html: subscriptionCreatedEmail({
-      customerName: name,
-      planName: subscription.items.data[0].price.nickname || "Premium Plan",
-      amount: subscription.items.data[0].price.unit_amount / 100,
-      currency: subscription.currency.toUpperCase(),
-      billingPeriod: subscription.items.data[0].price.recurring.interval,
-      trialEnd: subscription.trial_end
-        ? new Date(subscription.trial_end * 1000)
-        : null,
-    }),
+  // Email notification removed for deployment stability
+  logger.info("Subscription created - email notification skipped", {
+    customerId,
+    email: email.replace(/(.{3}).*(@.*)/, "$1******$2"),
   });
 
   await addBillingHistoryEntry({
@@ -242,13 +224,10 @@ async function handleSubscriptionDeleted(event) {
   if (customerData.rows.length > 0) {
     const { email, name } = customerData.rows[0];
 
-    await sendEmail({
-      to: email,
-      subject: "Your PayFlow Subscription Has Been Canceled",
-      html: subscriptionCanceledEmail({
-        customerName: name,
-        endDate: new Date(),
-      }),
+    // Email notification removed for deployment stability
+    logger.info("Subscription canceled - email notification skipped", {
+      customerId,
+      email: email.replace(/(.{3}).*(@.*)/, "$1******$2"),
     });
   }
 
@@ -283,17 +262,10 @@ async function handleTrialWillEnd(event) {
 
   const { email, name, customer_id: customerId } = result.rows[0];
 
-  // Send reminder email
-  await sendEmail({
-    to: email,
-    subject: "Your PayFlow Trial is Ending Soon",
-    html: trialEndingSoonEmail({
-      customerName: name,
-      trialEndDate: new Date(subscription.trial_end * 1000),
-      planName: subscription.items.data[0].price.nickname || "Premium Plan",
-      amount: subscription.items.data[0].price.unit_amount / 100,
-      currency: subscription.currency.toUpperCase(),
-    }),
+  // Email notification removed for deployment stability
+  logger.info("Trial ending soon - email notification skipped", {
+    customerId,
+    email: email.replace(/(.{3}).*(@.*)/, "$1******$2"),
   });
 
   await logPaymentEvent({
@@ -348,19 +320,10 @@ async function handleInvoicePaid(event) {
   if (customerData.rows.length > 0) {
     const { email, name } = customerData.rows[0];
 
-    // Send receipt email
-    await sendEmail({
-      to: email,
-      subject: "Payment Received - Invoice Receipt",
-      html: invoicePaidEmail({
-        customerName: name,
-        invoiceNumber: invoice.number,
-        amount: invoice.amount_paid / 100,
-        currency: invoice.currency.toUpperCase(),
-        paidDate: new Date(),
-        invoiceUrl: invoice.hosted_invoice_url,
-        pdfUrl: invoice.invoice_pdf,
-      }),
+    // Email notification removed for deployment stability
+    logger.info("Invoice paid - email notification skipped", {
+      customerId,
+      email: email.replace(/(.{3}).*(@.*)/, "$1******$2"),
     });
   }
 
@@ -481,20 +444,10 @@ async function handleInvoicePaymentFailed(event) {
   if (customerData.rows.length > 0) {
     const { email, name } = customerData.rows[0];
 
-    // Send payment failed notification
-    await sendEmail({
-      to: email,
-      subject: "Payment Failed - Action Required",
-      html: invoicePaymentFailedEmail({
-        customerName: name,
-        amount: invoice.amount_due / 100,
-        currency: invoice.currency.toUpperCase(),
-        failureReason:
-          invoice.last_finalization_error?.message ||
-          "Payment could not be processed",
-        retryCount: retry_count,
-        updatePaymentUrl: `${process.env.FRONTEND_URL}/billing/payment-methods`,
-      }),
+    // Email notification removed for deployment stability
+    logger.info("Payment failed - email notification skipped", {
+      customerId,
+      email: email.replace(/(.{3}).*(@.*)/, "$1******$2"),
     });
   }
 

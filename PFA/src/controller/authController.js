@@ -9,15 +9,6 @@ import {
   comparePassword,
   generateToken,
 } from "../utils/validation.js";
-import {
-  createEmailVerificationToken,
-  sendVerificationEmail,
-  verifyEmailToken,
-  markEmailAsVerified,
-  sendPasswordResetEmail,
-  createPasswordResetToken,
-  resetPassword,
-} from "../service/emailVerification.service.js";
 import { logger } from "../utils/logger.js";
 
 export const authController = {
@@ -75,32 +66,18 @@ export const authController = {
 
       await client.query("BEGIN");
 
+      // Email verification disabled for deployment stability
       const insertResult = await client.query(
         `INSERT INTO users (email, password_hash, first_name, last_name, company_name, isVerified) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, email, first_name, last_name, company_name`,
-        [email, hashed, firstName, lastName, companyName, false],
+        [email, hashed, firstName, lastName, companyName, true],
       );
 
       const user = insertResult.rows[0];
-      const token = await createEmailVerificationToken(user.id, client);
 
-      //   Verify email
-      try {
-        await sendVerificationEmail(email, token);
-        await client.query("COMMIT");
-        const emailPrefix = email.replace(/(.{3}).*(@.*)/, "$1******$2");
-        logger.info(
-          `[VERIFY EMAIL] Verification email sent to: ${emailPrefix}`,
-        );
-      } catch (emailErr) {
-        await client.query("ROLLBACK");
-        logger.error("[EMAIL SENDING ERROR] Email sending error: ", {
-          email: email.replace(/(.{3}).*(@.*)/, "$1******$2"),
-          error: emailErr.message,
-        });
-        return res.status(500).json({
-          message: "Error sending verification email. Please try again later.",
-        });
-      }
+      await client.query("COMMIT");
+      logger.info(
+        `[SIGNUP] User registered successfully: ${email.replace(/(.{3}).*(@.*)/, "$1******$2")}`,
+      );
 
       return res.status(201).json({
         user: {
@@ -110,7 +87,7 @@ export const authController = {
           lastName: user.last_name,
           companyName: user.company_name,
         },
-        message: "Registration successful. Please verify your email.",
+        message: "Registration successful.",
       });
     } catch (err) {
       if (client) await client.query("ROLLBACK");
@@ -293,155 +270,31 @@ export const authController = {
     return res.status(200).json({ message: "Logout successful." });
   },
 
+  // Email verification disabled for deployment stability
   verifyEmail: async (req, res) => {
-    const token = req.body?.token;
-    if (!token)
-      return res
-        .status(400)
-        .json({ message: "Verification token is required." });
-
-    try {
-      const userId = await verifyEmailToken(token);
-      if (!userId)
-        return res.status(400).json({ message: "Invalid or expired token." });
-
-      await markEmailAsVerified(userId);
-      logger.info(`[VERIFY EMAIL] Email verified for user ID: ${userId}`);
-    } catch (err) {
-      logger.error("[VERIFY EMAIL ERROR] Verification error: ", {
-        error: err.message,
-      });
-      return res
-        .status(500)
-        .json({ message: "Error verifying email. Please try again later." });
-    }
-
-    return res.status(200).json({ message: "Email successfully verified." });
+    return res
+      .status(200)
+      .json({ message: "Email verification is currently disabled." });
   },
 
   resendVerificationEmail: async (req, res) => {
-    const email = sanitizeEmail(req.body?.email);
-    if (!email || !validateEmail(email)) {
-      return res.status(400).json({ message: "Invalid email address." });
-    }
-    try {
-      const db = getDBConnection();
-      const client = await db.connect();
-      const userResult = await client.query(
-        "SELECT id, isVerified FROM users WHERE email = $1",
-        [email],
-      );
-      if (userResult.rowCount === 0) {
-        return res
-          .status(200)
-          .json({ message: "Verification email resent if account exists." });
-      }
-      const user = userResult.rows[0];
-
-      if (user.isverified) {
-        return res.status(400).json({ message: "Email is already verified." });
-      }
-      const token = await createEmailVerificationToken(user.id, client);
-      await sendVerificationEmail(email, token);
-      const emailPrefix = email.replace(/(.{3}).*(@.*)/, "$1******$2");
-      logger.info(
-        `[RESEND VERIFY EMAIL] Verification email resent to: ${emailPrefix}`,
-      );
-      return res
-        .status(200)
-        .json({ message: "Verification email resent if account exists." });
-    } catch (err) {
-      logger.error("[RESEND VERIFY EMAIL ERROR] Resend verification error: ", {
-        email: email.replace(/(.{3}).*(@.*)/, "$1***$2"),
-        error: err.message,
-      });
-      return res.status(500).json({
-        message: "Error resending verification email. Please try again later.",
-      });
-    }
+    return res
+      .status(200)
+      .json({ message: "Email verification is currently disabled." });
   },
 
   passwordReset: async (req, res) => {
-    const email = sanitizeEmail(req.body?.email);
-    if (!email || !validateEmail(email)) {
-      return res.status(400).json({ message: "Invalid email address." });
-    }
-
-    try {
-      // Create secure password reset token
-      const token = await createPasswordResetToken(email);
-
-      // Send password reset email
-      await sendPasswordResetEmail(email, token);
-
-      logger.info(
-        `[PASSWORD RESET] Password reset email sent to: ${email.replace(/(.{3}).*(@.*)/, "$1******$2")}`,
-      );
-
-      return res.status(200).json({
-        message:
-          "If an account exists with this email, a password reset link has been sent.",
-      });
-    } catch (err) {
-      logger.error("[PASSWORD RESET ERROR] Password reset error: ", {
-        email: email.replace(/(.{3}).*(@.*)/, "$1***$2"),
-        error: err.message,
-      });
-
-      return res.status(200).json({
-        message:
-          "If an account exists with this email, a password reset link has been sent.",
-      });
-    }
+    return res.status(503).json({
+      message:
+        "Password reset is temporarily unavailable. Please contact support.",
+    });
   },
 
   resetPasswordHandler: async (req, res) => {
-    const { token, newPassword } = req.body;
-
-    if (!token || !newPassword) {
-      return res.status(400).json({
-        message: "Token and new password are required.",
-      });
-    }
-
-    if (!validatePassword(newPassword)) {
-      return res.status(400).json({
-        message:
-          "Password must be at least 8 characters and include mixed case + number.",
-      });
-    }
-
-    try {
-      // Hash the new password
-      const hashedPassword = await hashPassword(newPassword);
-
-      // Reset password using token
-      const success = await resetPassword(token, hashedPassword);
-
-      if (!success) {
-        return res.status(400).json({
-          message: "Invalid or expired reset token.",
-        });
-      }
-
-      logger.info("[PASSWORD RESET] Password successfully reset");
-
-      await db.query("DELETE FROM password_reset_tokens WHERE token = $1", [
-        token,
-      ]);
-
-      return res.status(200).json({
-        message: "Password has been reset successfully.",
-      });
-    } catch (err) {
-      logger.error("[PASSWORD RESET HANDLER ERROR] ", {
-        error: err.message,
-      });
-
-      return res.status(500).json({
-        message: "Failed to reset password. Please try again later.",
-      });
-    }
+    return res.status(503).json({
+      message:
+        "Password reset is temporarily unavailable. Please contact support.",
+    });
   },
 
   getProfile: async (req, res) => {
