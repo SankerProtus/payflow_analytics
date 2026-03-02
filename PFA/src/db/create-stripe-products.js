@@ -65,6 +65,35 @@ async function createStripeProductsAndPrices() {
   console.log("🚀 Starting Stripe product and price creation...\n");
 
   try {
+    // Check if plans already exist in database
+    const existingPlans = await db.query(
+      "SELECT COUNT(*) as count FROM subscription_plans WHERE active = true",
+    );
+
+    if (existingPlans.rows[0].count > 0) {
+      console.log(
+        `✅ Found ${existingPlans.rows[0].count} existing plan(s) in database`,
+      );
+      console.log("ℹ️  Skipping Stripe product creation to avoid duplicates\n");
+
+      const result = await db.query(
+        "SELECT name, stripe_price_id, amount, billing_interval, tier FROM subscription_plans WHERE active = true ORDER BY amount",
+      );
+      console.log("📋 Current plans:");
+      console.table(
+        result.rows.map((r) => ({
+          Plan: r.name,
+          Price: `$${r.amount / 100}`,
+          Interval: r.billing_interval,
+          Tier: r.tier,
+          "Stripe Price ID": r.stripe_price_id,
+        })),
+      );
+      return; // Exit early if plans already exist
+    }
+
+    console.log("ℹ️  No existing plans found. Creating new products...\n");
+
     for (const plan of PLANS) {
       console.log(`Creating product: ${plan.name}`);
 
@@ -209,9 +238,15 @@ async function createStripeProductsAndPrices() {
         "\n⚠️  Authentication failed. Please check your STRIPE_SECRET_KEY in .env",
       );
     }
+    console.error("\nStack trace:", error.stack);
     process.exit(1);
   } finally {
-    await db.end();
+    try {
+      await db.end();
+      console.log("✅ Database connection closed\n");
+    } catch (err) {
+      console.warn("⚠️  Warning: Could not close database connection:", err.message);
+    }
   }
 }
 
