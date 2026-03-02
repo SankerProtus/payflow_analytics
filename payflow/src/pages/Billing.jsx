@@ -4,7 +4,8 @@
  */
 
 import { useState } from "react";
-import { CreditCard, FileText, Package, Plus } from "lucide-react";
+import { CreditCard, FileText, Package, Plus, Loader2 } from "lucide-react";
+import { useStripe, useElements } from "@stripe/react-stripe-js";
 import Layout from "../components/layout/Layout";
 import Card from "../components/common/Card";
 import Button from "../components/common/Button";
@@ -20,13 +21,14 @@ import Loader from "../components/common/Loader";
 import ErrorMessage from "../components/common/ErrorMessage";
 
 const Billing = () => {
+  // Stripe hooks
+  const stripe = useStripe();
+  const elements = useElements();
+
   const [activeTab, setActiveTab] = useState("payment-methods");
   const [showAddPaymentMethod, setShowAddPaymentMethod] = useState(false);
   const [showCreateSubscription, setShowCreateSubscription] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-
-  // CRITICAL: Unique key for PaymentMethodForm to ensure clean Stripe Element remount
-  const [paymentFormKey, setPaymentFormKey] = useState(0);
 
   // Get customer data from hook
   const {
@@ -247,10 +249,7 @@ const Billing = () => {
                 </h2>
                 <Button
                   variant="primary"
-                  onClick={() => {
-                    setPaymentFormKey((prev) => prev + 1);
-                    setShowAddPaymentMethod(!showAddPaymentMethod);
-                  }}
+                  onClick={() => setShowAddPaymentMethod(!showAddPaymentMethod)}
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add Payment Method
@@ -262,14 +261,20 @@ const Billing = () => {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">
                     Add New Payment Method
                   </h3>
-                  {/* Elements provider at App level - no wrapper needed here */}
-                  <PaymentMethodForm
-                    key={`payment-form-${customerId}-${paymentFormKey}`}
-                    customerId={customerId}
-                    onSuccess={handlePaymentMethodAdded}
-                    onError={(error) => console.error(error)}
-                    setAsDefault={true}
-                  />
+                  {!stripe || !elements ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary-600 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600">Loading Stripe...</p>
+                    </div>
+                  ) : (
+                    <PaymentMethodForm
+                      key={`payment-form-${customerId}`}
+                      customerId={customerId}
+                      onSuccess={handlePaymentMethodAdded}
+                      onError={(error) => console.error(error)}
+                      setAsDefault={true}
+                    />
+                  )}
                 </Card>
               )}
 

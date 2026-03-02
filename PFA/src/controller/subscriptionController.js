@@ -22,9 +22,6 @@ export const subscriptionController = {
       } = req.body;
       const userId = req.user.id;
 
-      // ==================== VALIDATION ====================
-
-      // Required fields
       if (!customerId || !planId || !paymentMethodId) {
         logger.warn("Subscription creation validation failed", {
           userId,
@@ -54,7 +51,7 @@ export const subscriptionController = {
 
       // Validate customer exists and belongs to user
       const customerCheck = await db.query(
-        "SELECT id, status FROM customers WHERE id = $1 AND user_id = $2",
+        "SELECT id FROM customers WHERE id = $1 AND user_id = $2",
         [customerId, userId]
       );
 
@@ -63,14 +60,6 @@ export const subscriptionController = {
           success: false,
           error: "Customer not found or does not belong to your account",
           code: "CUSTOMER_NOT_FOUND",
-        });
-      }
-
-      if (customerCheck.rows[0].status !== "inactive") {
-        return res.status(400).json({
-          success: false,
-          error: "Cannot create subscription for inactive customer",
-          code: "CUSTOMER_INACTIVE",
         });
       }
 
@@ -124,8 +113,6 @@ export const subscriptionController = {
           },
         });
       }
-
-      // ==================== EXECUTION ====================
 
       logger.info("Creating subscription", {
         userId,

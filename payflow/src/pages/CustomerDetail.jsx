@@ -47,8 +47,6 @@ const CustomerDetail = () => {
     );
   }
 
-  // ...existing code...
-
   return (
     <Layout>
       <div className="space-y-6">
@@ -74,14 +72,12 @@ const CustomerDetail = () => {
                   Customer since {formatDate(customer.created_at)}
                 </span>
               </div>
-              {/* ...existing code... */}
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="primary"
                 size="md"
                 onClick={() => setShowCreateSubscription(true)}
-                disabled={isDemoCustomer}
                 className="flex items-center gap-1 py-3"
               >
                 <Plus className="h-5 w-5 mr-2" />

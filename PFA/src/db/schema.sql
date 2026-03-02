@@ -10,6 +10,15 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ENUMS
 -- =====================================================
 
+CREATE TYPE customer_status AS ENUM (
+  'active',
+  'trialing',
+  'past_due',
+  'canceled',
+  'paused',
+  'inactive'
+);
+
 CREATE TYPE subscription_status AS ENUM (
   'trialing',
   'active',
@@ -106,6 +115,7 @@ CREATE TABLE customers (
     address JSONB,
     metadata JSONB DEFAULT '{}'::jsonb,
     description TEXT,
+    status customer_status NOT NULL DEFAULT 'inactive',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -113,6 +123,8 @@ CREATE TABLE customers (
 CREATE INDEX idx_customers_user_id ON customers(user_id);
 CREATE INDEX idx_customers_stripe_customer_id ON customers(stripe_customer_id);
 CREATE INDEX idx_customers_email ON customers(email);
+CREATE INDEX idx_customers_status ON customers(status);
+CREATE INDEX idx_customers_user_status ON customers(user_id, status);
 CREATE INDEX idx_customers_created_at ON customers(created_at DESC);
 
 -- =====================================================

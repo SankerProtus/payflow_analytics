@@ -62,13 +62,12 @@ export const dashboardController = {
             churn_calc AS (
                 SELECT
                     CASE
-                        WHEN COUNT(*) FILTER (WHERE sst.created_at >= NOW() - INTERVAL '60 days' AND sst.created_at < NOW() - INTERVAL '30 days') > 0
-                        THEN (COUNT(*) FILTER (WHERE to_status = 'canceled' AND sst.created_at >= NOW() - INTERVAL '30 days')::numeric /
-                              COUNT(*) FILTER (WHERE sst.created_at >= NOW() - INTERVAL '60 days' AND sst.created_at < NOW() - INTERVAL '30 days')::numeric * 100)
+                        WHEN COUNT(DISTINCT s.customer_id) FILTER (WHERE s.created_at >= NOW() - INTERVAL '60 days' AND s.created_at < NOW() - INTERVAL '30 days') > 0
+                        THEN (COUNT(DISTINCT s.customer_id) FILTER (WHERE s.status = 'canceled' AND s.canceled_at >= NOW() - INTERVAL '30 days')::numeric /
+                              COUNT(DISTINCT s.customer_id) FILTER (WHERE s.created_at >= NOW() - INTERVAL '60 days' AND s.created_at < NOW() - INTERVAL '30 days')::numeric * 100)
                         ELSE 0
                     END as churn_rate
-                FROM subscription_state_transitions sst
-                JOIN subscriptions s ON sst.subscription_id = s.id
+                FROM subscriptions s
                 JOIN customers c ON s.customer_id = c.id
                 WHERE c.user_id = $1
             )
@@ -255,9 +254,9 @@ export const dashboardController = {
                     COALESCE(SUM(i.amount_paid) FILTER (WHERE i.status = 'paid'), 0) as revenue,
                     COUNT(DISTINCT s.id) FILTER (WHERE s.status IN ('active', 'trialing')) as subscriptions,
                     COUNT(DISTINCT c.id) FILTER (WHERE DATE_TRUNC('month', c.created_at) = DATE_TRUNC('month', i.created_at)) as new_customers,
-                    COUNT(DISTINCT sst.subscription_id) FILTER (
-                        WHERE sst.to_status = 'canceled'
-                        AND DATE_TRUNC('month', sst.created_at) = DATE_TRUNC('month', i.created_at)
+                    COUNT(DISTINCT s.id) FILTER (
+                        WHERE s.status = 'canceled'
+                        AND DATE_TRUNC('month', s.canceled_at) = DATE_TRUNC('month', i.created_at)
                     ) as churned_customers,
                     COALESCE(SUM(
                         CASE
@@ -270,7 +269,6 @@ export const dashboardController = {
                 FROM customers c
                 LEFT JOIN subscriptions s ON c.id = s.customer_id
                 LEFT JOIN invoices i ON s.id = i.subscription_id
-                LEFT JOIN subscription_state_transitions sst ON s.id = sst.subscription_id
                 WHERE c.user_id = $1
                 GROUP BY period
             )
@@ -345,36 +343,38 @@ export const dashboardController = {
           c.email as customer_email,
           c.name as customer_name,
           CASE
-            WHEN sst.to_status = 'active' AND sst.from_status IS NULL THEN 'subscription_created'
-            WHEN sst.to_status = 'canceled' THEN 'subscription_canceled'
-            WHEN sst.to_status = 'past_due' THEN 'subscription_past_due'
-            WHEN sst.to_status = 'paused' THEN 'subscription_paused'
+            WHEN s.status = 'active' AND s.created_at >= NOW() - ($2 || ' days')::interval THEN 'subscription_created'
+            WHEN s.status = 'canceled' THEN 'subscription_canceled'
+            WHEN s.status = 'past_due' THEN 'subscription_past_due'
+            WHEN s.status = 'paused' THEN 'subscription_paused'
             ELSE 'subscription_updated'
           END as activity_type,
           CASE
-            WHEN sst.to_status = 'active' AND sst.from_status IS NULL THEN 'New subscription'
-            WHEN sst.to_status = 'canceled' THEN 'Subscription canceled'
-            WHEN sst.to_status = 'past_due' THEN 'Payment past due'
-            WHEN sst.to_status = 'paused' THEN 'Subscription paused'
+            WHEN s.status = 'active' AND s.created_at >= NOW() - ($2 || ' days')::interval THEN 'New subscription'
+            WHEN s.status = 'canceled' THEN 'Subscription canceled'
+            WHEN s.status = 'past_due' THEN 'Payment past due'
+            WHEN s.status = 'paused' THEN 'Subscription paused'
             ELSE 'Subscription updated'
           END as title,
-          COALESCE(sst.reason, c.email || ' subscription changed to ' || sst.to_status) as description,
-          sst.created_at as timestamp,
+          c.email || ' subscription ' || s.status as description,
+          COALESCE(s.canceled_at, s.updated_at, s.created_at) as timestamp,
           jsonb_build_object(
             'customer_id', c.id,
             'email', c.email,
             'name', c.name,
             'subscription_id', s.id,
-            'status', sst.to_status,
-            'from_status', sst.from_status,
+            'status', s.status,
             'amount', s.amount,
             'interval', s.billing_interval
           ) as metadata
-        FROM subscription_state_transitions sst
-        JOIN subscriptions s ON sst.subscription_id = s.id
+        FROM subscriptions s
         JOIN customers c ON s.customer_id = c.id
         WHERE c.user_id = $1
-          AND sst.created_at >= NOW() - ($2 || ' days')::interval
+          AND (
+            s.created_at >= NOW() - ($2 || ' days')::interval OR
+            s.canceled_at >= NOW() - ($2 || ' days')::interval OR
+            s.updated_at >= NOW() - ($2 || ' days')::interval
+          )
       ),
       payment_events AS (
         SELECT
@@ -626,34 +626,22 @@ export const dashboardController = {
       trial_stats AS (
         SELECT
           COUNT(*) as total_trials,
-          COUNT(*) FILTER (WHERE trial_end > NOW()) as active_trials,
-          COUNT(*) FILTER (WHERE trial_end <= NOW() AND status = 'active') as converted_trials,
+          COUNT(*) FILTER (WHERE s.trial_end > NOW()) as active_trials,
+          COUNT(*) FILTER (WHERE s.trial_end <= NOW() AND s.status = 'active') as converted_trials,
           CASE
-            WHEN COUNT(*) FILTER (WHERE trial_end <= NOW()) > 0
-            THEN (COUNT(*) FILTER (WHERE trial_end <= NOW() AND status = 'active')::numeric /
-                  COUNT(*) FILTER (WHERE trial_end <= NOW())::numeric * 100)
+            WHEN COUNT(*) FILTER (WHERE s.trial_end <= NOW()) > 0
+            THEN (COUNT(*) FILTER (WHERE s.trial_end <= NOW() AND s.status = 'active')::numeric /
+                  COUNT(*) FILTER (WHERE s.trial_end <= NOW())::numeric * 100)
             ELSE 0
           END as trial_conversion_rate
         FROM subscriptions s
         JOIN customers c ON s.customer_id = c.id
         WHERE c.user_id = $1 AND s.trial_end IS NOT NULL
-      ),
-      upgrade_downgrade AS (
-        SELECT
-          COUNT(*) FILTER (WHERE from_status = 'trialing' AND to_status = 'active') as trial_to_active,
-          COUNT(*) FILTER (WHERE to_status = 'canceled') as total_cancellations,
-          COUNT(*) FILTER (WHERE to_status = 'paused') as total_paused,
-          COUNT(*) FILTER (WHERE to_status = 'past_due') as total_past_due
-        FROM subscription_state_transitions sst
-        JOIN subscriptions s ON sst.subscription_id = s.id
-        JOIN customers c ON s.customer_id = c.id
-        WHERE c.user_id = $1
-          AND sst.created_at >= NOW() - INTERVAL '90 days'
       )
       SELECT
-        (SELECT json_agg(sb.*) FROM subscription_breakdown sb) as breakdown,
-        (SELECT row_to_json(ts.*) FROM trial_stats ts) as trials,
-        (SELECT row_to_json(ud.*) FROM upgrade_downgrade ud) as transitions
+        COALESCE((SELECT json_agg(sb.*) FROM subscription_breakdown sb), '[]'::json) as breakdown,
+        COALESCE((SELECT row_to_json(ts.*) FROM trial_stats ts),
+          '{"total_trials":0,"active_trials":0,"converted_trials":0,"trial_conversion_rate":0}'::json) as trials
     `;
 
     const result = await db.query(statsQuery, [userId]);
@@ -667,7 +655,7 @@ export const dashboardController = {
         converted_trials: 0,
         trial_conversion_rate: 0,
       },
-      transitions: data.transitions || {
+      transitions: {
         trial_to_active: 0,
         total_cancellations: 0,
         total_paused: 0,
@@ -688,30 +676,22 @@ export const dashboardController = {
     const churnQuery = `
       WITH monthly_churn AS (
         SELECT
-          TO_CHAR(DATE_TRUNC('month', sst.created_at), 'YYYY-MM') as period,
-          COUNT(DISTINCT s.customer_id) FILTER (WHERE sst.to_status = 'canceled') as churned_customers,
-          COUNT(DISTINCT s.customer_id) as total_active_start_of_month
-        FROM subscription_state_transitions sst
-        JOIN subscriptions s ON sst.subscription_id = s.id
+          TO_CHAR(DATE_TRUNC('month', s.canceled_at), 'YYYY-MM') as period,
+          COUNT(DISTINCT s.customer_id) as churned_customers,
+          (SELECT COUNT(DISTINCT s2.customer_id)
+           FROM subscriptions s2
+           JOIN customers c2 ON s2.customer_id = c2.id
+           WHERE c2.user_id = $1
+           AND s2.status IN ('active', 'trialing', 'canceled')
+           AND s2.created_at <= DATE_TRUNC('month', s.canceled_at)
+          ) as total_active_start_of_month
+        FROM subscriptions s
         JOIN customers c ON s.customer_id = c.id
         WHERE c.user_id = $1
-          AND sst.created_at >= NOW() - ($2 || ' months')::interval
+          AND s.status = 'canceled'
+          AND s.canceled_at >= NOW() - ($2 || ' months')::interval
         GROUP BY period
         ORDER BY period DESC
-      ),
-      churn_reasons AS (
-        SELECT
-          COALESCE(sst.reason, 'No reason provided') as reason,
-          COUNT(*) as count
-        FROM subscription_state_transitions sst
-        JOIN subscriptions s ON sst.subscription_id = s.id
-        JOIN customers c ON s.customer_id = c.id
-        WHERE c.user_id = $1
-          AND sst.to_status = 'canceled'
-          AND sst.created_at >= NOW() - INTERVAL '90 days'
-        GROUP BY reason
-        ORDER BY count DESC
-        LIMIT 10
       ),
       at_risk_prediction AS (
         SELECT
@@ -720,12 +700,12 @@ export const dashboardController = {
           c.name,
           COUNT(i.id) FILTER (WHERE i.payment_failed_at IS NOT NULL) as failed_payment_count,
           MAX(i.payment_failed_at) as last_failure_date,
-          EXTRACT(DAY FROM NOW() - MAX(i.created_at))::integer as days_since_last_invoice,
+          COALESCE(EXTRACT(DAY FROM NOW() - MAX(i.created_at))::integer, 0) as days_since_last_invoice,
           s.status,
           CASE
             WHEN COUNT(i.id) FILTER (WHERE i.payment_failed_at IS NOT NULL) >= 3 THEN 'high'
             WHEN COUNT(i.id) FILTER (WHERE i.payment_failed_at IS NOT NULL) >= 1 THEN 'medium'
-            WHEN EXTRACT(DAY FROM NOW() - MAX(i.created_at)) > 40 THEN 'medium'
+            WHEN COALESCE(EXTRACT(DAY FROM NOW() - MAX(i.created_at)), 0) > 40 THEN 'medium'
             ELSE 'low'
           END as churn_risk
         FROM customers c
@@ -735,14 +715,13 @@ export const dashboardController = {
           AND s.status IN ('active', 'past_due', 'trialing')
         GROUP BY c.id, c.email, c.name, s.status
         HAVING COUNT(i.id) FILTER (WHERE i.payment_failed_at IS NOT NULL) > 0
-          OR EXTRACT(DAY FROM NOW() - MAX(i.created_at)) > 40
+          OR COALESCE(EXTRACT(DAY FROM NOW() - MAX(i.created_at)), 0) > 40
         ORDER BY churn_risk DESC, failed_payment_count DESC
         LIMIT 20
       )
       SELECT
-        (SELECT json_agg(mc.*) FROM monthly_churn mc) as monthly_trends,
-        (SELECT json_agg(cr.*) FROM churn_reasons cr) as reasons,
-        (SELECT json_agg(arp.*) FROM at_risk_prediction arp) as at_risk_customers
+        COALESCE((SELECT json_agg(mc.*) FROM monthly_churn mc), '[]'::json) as monthly_trends,
+        COALESCE((SELECT json_agg(arp.*) FROM at_risk_prediction arp), '[]'::json) as at_risk_customers
     `;
 
     const result = await db.query(churnQuery, [userId, months]);
@@ -763,7 +742,7 @@ export const dashboardController = {
     sendSuccess(res, STATUS.OK, {
       monthly_churn_trends: monthlyTrends,
       average_churn_rate: parseFloat(avgChurnRate.toFixed(2)),
-      churn_reasons: data.reasons || [],
+      churn_reasons: [],
       at_risk_customers: data.at_risk_customers || [],
     });
   }),
@@ -1161,7 +1140,7 @@ export const dashboardController = {
       ? `AND c.created_at >= NOW() - ($4 || ' days')::interval`
       : "";
     const dateFilter2 = days
-      ? `AND sst.created_at >= NOW() - ($4 || ' days')::interval`
+      ? `AND COALESCE(s.canceled_at, s.updated_at, s.created_at) >= NOW() - ($4 || ' days')::interval`
       : "";
     const dateFilter3 = days
       ? `AND COALESCE(i.payment_failed_at, i.created_at) >= NOW() - ($4 || ' days')::interval`
@@ -1172,7 +1151,7 @@ export const dashboardController = {
       ? `AND c.created_at >= NOW() - ($2 || ' days')::interval`
       : "";
     const countDateFilter2 = days
-      ? `AND sst.created_at >= NOW() - ($2 || ' days')::interval`
+      ? `AND COALESCE(s.canceled_at, s.updated_at, s.created_at) >= NOW() - ($2 || ' days')::interval`
       : "";
     const countDateFilter3 = days
       ? `AND COALESCE(i.payment_failed_at, i.created_at) >= NOW() - ($2 || ' days')::interval`
@@ -1198,18 +1177,17 @@ export const dashboardController = {
 
         SELECT
           'subscription_state_change',
-          'Subscription ' || sst.to_status,
+          'Subscription ' || s.status,
           c.email,
-          sst.created_at,
+          COALESCE(s.canceled_at, s.updated_at, s.created_at),
           jsonb_build_object(
             'subscription_id', s.id,
             'customer_email', c.email,
-            'from_status', sst.from_status,
-            'to_status', sst.to_status,
-            'reason', sst.reason
+            'status', s.status,
+            'amount', s.amount,
+            'interval', s.billing_interval
           )
-        FROM subscription_state_transitions sst
-        JOIN subscriptions s ON sst.subscription_id = s.id
+        FROM subscriptions s
         JOIN customers c ON s.customer_id = c.id
         WHERE c.user_id = $1
           ${dateFilter2}
@@ -1257,9 +1235,8 @@ export const dashboardController = {
 
         UNION ALL
 
-        SELECT sst.created_at
-        FROM subscription_state_transitions sst
-        JOIN subscriptions s ON sst.subscription_id = s.id
+        SELECT COALESCE(s.canceled_at, s.updated_at, s.created_at)
+        FROM subscriptions s
         JOIN customers c ON s.customer_id = c.id
         WHERE c.user_id = $1
           ${countDateFilter2}

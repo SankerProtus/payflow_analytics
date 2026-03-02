@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useStripe, useElements } from "@stripe/react-stripe-js";
 import {
   X,
   Package,
@@ -33,6 +34,10 @@ const CreateSubscriptionWizard = ({
   onSuccess,
   preSelectedCustomerId = null,
 }) => {
+  // Stripe hooks
+  const stripe = useStripe();
+  const elements = useElements();
+
   // State Management
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -50,7 +55,7 @@ const CreateSubscriptionWizard = ({
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showAddPaymentMethod, setShowAddPaymentMethod] = useState(false);
-  const [paymentFormKey, setPaymentFormKey] = useState(0);
+  const [paymentFormMounted, setPaymentFormMounted] = useState(false);
 
   // UI States
   const [loading, setLoading] = useState(false);
@@ -168,13 +173,6 @@ const CreateSubscriptionWizard = ({
       case 1:
         if (!formData.customerId) {
           errors.customerId = "Please select a customer";
-        } else {
-          // Validate customer status
-          const customer = customers.find((c) => c.id === formData.customerId);
-          if (customer && customer.status === "inactive") {
-            errors.customerId =
-              "This customer is inactive and cannot create subscriptions";
-          }
         }
         break;
 
@@ -350,14 +348,23 @@ const CreateSubscriptionWizard = ({
       ...prev,
       paymentMethodId: data.paymentMethodId,
     }));
-    setShowAddPaymentMethod(false);
+    // Don't unmount the form immediately - keep it mounted
     setSuccessMessage("Payment method added successfully!");
-    setTimeout(() => setSuccessMessage(""), 3000);
+    setTimeout(() => {
+      setSuccessMessage("");
+      // Now hide the form after success message is shown
+      setShowAddPaymentMethod(false);
+    }, 1500);
   };
 
   const handleShowAddPaymentMethod = () => {
-    setPaymentFormKey((prev) => prev + 1);
     setShowAddPaymentMethod(true);
+    setPaymentFormMounted(true);
+  };
+
+  const handleHideAddPaymentMethod = () => {
+    // Keep the form mounted but hidden to prevent Element unmounting issues
+    setShowAddPaymentMethod(false);
   };
 
   // Utility Functions
@@ -373,6 +380,7 @@ const CreateSubscriptionWizard = ({
     setSelectedPlan(null);
     setSelectedCustomer(null);
     setShowAddPaymentMethod(false);
+    setPaymentFormMounted(false);
     setError("");
     setValidationErrors({});
     setSuccessMessage("");
@@ -453,18 +461,24 @@ const CreateSubscriptionWizard = ({
       );
     }
 
-    switch (step) {
-      case 1:
-        return renderCustomerStep();
-      case 2:
-        return renderPlanStep();
-      case 3:
-        return renderPaymentStep();
-      case 4:
-        return renderConfirmationStep();
-      default:
-        return null;
-    }
+    return (
+      <>
+        {/* Render steps but hide inactive ones - this prevents CardElement unmounting during navigation */}
+        <div style={{ display: step === 1 ? "block" : "none" }}>
+          {renderCustomerStep()}
+        </div>
+        <div style={{ display: step === 2 ? "block" : "none" }}>
+          {renderPlanStep()}
+        </div>
+        {/* Payment step stays mounted after first render to preserve CardElement */}
+        <div style={{ display: step === 3 ? "block" : "none" }}>
+          {(step === 3 || paymentFormMounted) && renderPaymentStep()}
+        </div>
+        <div style={{ display: step === 4 ? "block" : "none" }}>
+          {step === 4 && renderConfirmationStep()}
+        </div>
+      </>
+    );
   };
 
   const renderCustomerStep = () => (
@@ -708,8 +722,12 @@ const CreateSubscriptionWizard = ({
       </div>
 
       {/* Add Payment Method Form */}
-      {showAddPaymentMethod && (
-        <div className="p-5 bg-gray-50 border border-gray-200 rounded-lg">
+      {(showAddPaymentMethod || paymentFormMounted) && (
+        <div
+          className={`p-5 bg-gray-50 border border-gray-200 rounded-lg transition-all ${
+            showAddPaymentMethod ? "block" : "hidden"
+          }`}
+        >
           <div className="flex items-center justify-between mb-4">
             <h4 className="font-semibold text-gray-900 flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-primary-600" />
@@ -717,21 +735,28 @@ const CreateSubscriptionWizard = ({
             </h4>
             <button
               type="button"
-              onClick={() => setShowAddPaymentMethod(false)}
+              onClick={handleHideAddPaymentMethod}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
-          <PaymentMethodForm
-            key={`payment-form-${formData.customerId}-${paymentFormKey}`}
-            customerId={formData.customerId}
-            inline={true}
-            onSuccess={handleAddPaymentMethodSuccess}
-            onError={(err) => setError(err.message || "Payment method error")}
-            buttonText="Save Payment Method"
-            showBillingDetails={false}
-          />
+          {!stripe || !elements ? (
+            <div className="text-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-primary-600 mx-auto mb-2" />
+              <p className="text-sm text-gray-600">Loading Stripe...</p>
+            </div>
+          ) : (
+            <PaymentMethodForm
+              key={`payment-form-${formData.customerId}-${paymentFormMounted}`}
+              customerId={formData.customerId}
+              inline={true}
+              onSuccess={handleAddPaymentMethodSuccess}
+              onError={(err) => setError(err.message || "Payment method error")}
+              buttonText="Save Payment Method"
+              showBillingDetails={false}
+            />
+          )}
         </div>
       )}
 
@@ -895,7 +920,7 @@ const CreateSubscriptionWizard = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 backdrop-blur-md bg-white/30 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-linear-to-r from-primary-600 to-primary-700">

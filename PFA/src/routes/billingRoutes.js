@@ -14,16 +14,10 @@ export const billingRoutes = express.Router();
 // Apply authentication middleware to all routes
 billingRoutes.use(authMiddleware);
 
-// ============================================================================
-// SUBSCRIPTION PLANS
-// ============================================================================
-
-// Get available subscription plans
+// Subscription Plans
 billingRoutes.get("/plans", paymentController.getPlans);
 
-// ============================================================================
-// PAYMENT INTENTS & SETUP INTENTS
-// ============================================================================
+// Payment Intents & Setup Intents
 
 // Create Setup Intent (for saving payment method for future use)
 billingRoutes.post("/setup-intent", paymentController.createSetupIntent);
@@ -34,9 +28,7 @@ billingRoutes.post("/payment-intent", pmController.createPaymentIntent);
 // Create Checkout Session (hosted Stripe Checkout page)
 billingRoutes.post("/checkout-session", paymentController.checkoutSession);
 
-// ============================================================================
-// PAYMENT METHODS
-// ============================================================================
+// Payment Methods
 
 // Attach payment method to customer
 billingRoutes.post("/payment-methods/attach", pmController.attachPaymentMethod);
@@ -50,11 +42,7 @@ billingRoutes.get(
   pmController.listPaymentMethods,
 );
 
-// ============================================================================
-// SUBSCRIPTIONS
-// ============================================================================
-
-// Create subscription
+// Subscriptions
 billingRoutes.post(
   "/subscriptions/create",
   subscriptionController.createSubscription,
@@ -84,11 +72,7 @@ billingRoutes.post(
   subscriptionController.resumeSubscription,
 );
 
-// ============================================================================
-// INVOICES
-// ============================================================================
-
-// Get invoice details
+// Invoices
 billingRoutes.get("/invoices/:invoiceId", invoiceController.getInvoice);
 
 // Retry failed invoice payment
