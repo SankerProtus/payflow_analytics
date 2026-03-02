@@ -35,7 +35,7 @@ const Navbar = ({ onMenuClick }) => {
         setNotifications(notifs);
         setUnreadCount(notifs.length);
       } catch (err) {
-        console.error("Failed to fetch notifications:", err);
+        // Silently fail - notifications are non-critical
       }
     };
 

@@ -35,7 +35,7 @@ export const getDBConnection = () => {
     });
 
     db.on("error", (err) => {
-      console.error("Unexpected database error:", err.message);
+      logger.error("Unexpected database error:", err.message);
     });
   }
 

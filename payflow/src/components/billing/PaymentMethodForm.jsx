@@ -118,23 +118,17 @@ const PaymentMethodForm = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // DEFENSE LAYER 1: Validate Stripe SDK is loaded
     if (!stripeRef.current || !elementsRef.current) {
-      console.error("[Submit] ❌ Stripe/Elements not loaded");
       setError("Stripe is still loading. Please wait a moment and try again.");
       return;
     }
 
-    // DEFENSE LAYER 2: Validate card element fired ready event
     if (!cardReady) {
-      console.error("[Submit] ❌ Card not ready");
       setError("Card element is still loading. Please wait a moment.");
       return;
     }
 
-    // DEFENSE LAYER 3: Validate we have the actual element instance
     if (!cardElementInstanceRef.current) {
-      console.error("[Submit] ❌ No stored instance");
       setError("Card element is not ready. Please try again.");
       return;
     }
@@ -203,8 +197,6 @@ const PaymentMethodForm = ({
         });
       }
     } catch (err) {
-      console.error("PaymentMethodForm error:", err);
-
       let errorMessage =
         err.message || "An error occurred while adding the payment method";
 

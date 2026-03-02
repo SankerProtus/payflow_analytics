@@ -122,7 +122,6 @@ const CreateSubscriptionWizard = ({
       }
     } catch (err) {
       if (err.name === "AbortError") return;
-      console.error("Error loading initial data:", err);
       setError("Failed to load subscription data. Please try again.");
     } finally {
       if (isMounted.current) {
@@ -148,8 +147,7 @@ const CreateSubscriptionWizard = ({
           paymentMethodId: defaultMethod.stripe_payment_method_id,
         }));
       }
-    } catch (err) {
-      console.error("Error loading payment methods:", err);
+    } catch {
       setPaymentMethods([]);
     }
   };
@@ -295,8 +293,6 @@ const CreateSubscriptionWizard = ({
         }
       }, 1500);
     } catch (err) {
-      console.error("[Subscription] Creation failed:", err);
-
       const errorMessage =
         err.response?.data?.error ||
         err.response?.data?.message ||

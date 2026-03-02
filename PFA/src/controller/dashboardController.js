@@ -674,24 +674,34 @@ export const dashboardController = {
     const months = Math.min(parseInt(req.query.months) || 6, 12);
 
     const churnQuery = `
-      WITH monthly_churn AS (
+      WITH monthly_periods AS (
+        SELECT DISTINCT
+          DATE_TRUNC('month', s.canceled_at) as month_start,
+          TO_CHAR(DATE_TRUNC('month', s.canceled_at), 'YYYY-MM') as period
+        FROM subscriptions s
+        JOIN customers c ON s.customer_id = c.id
+        WHERE c.user_id = $1
+          AND s.status = 'canceled'
+          AND s.canceled_at >= NOW() - ($2 || ' months')::interval
+      ),
+      monthly_churn AS (
         SELECT
-          TO_CHAR(DATE_TRUNC('month', s.canceled_at), 'YYYY-MM') as period,
+          mp.period,
           COUNT(DISTINCT s.customer_id) as churned_customers,
           (SELECT COUNT(DISTINCT s2.customer_id)
            FROM subscriptions s2
            JOIN customers c2 ON s2.customer_id = c2.id
            WHERE c2.user_id = $1
            AND s2.status IN ('active', 'trialing', 'canceled')
-           AND s2.created_at <= DATE_TRUNC('month', s.canceled_at)
+           AND s2.created_at <= mp.month_start
           ) as total_active_start_of_month
-        FROM subscriptions s
+        FROM monthly_periods mp
+        JOIN subscriptions s ON DATE_TRUNC('month', s.canceled_at) = mp.month_start
         JOIN customers c ON s.customer_id = c.id
         WHERE c.user_id = $1
           AND s.status = 'canceled'
-          AND s.canceled_at >= NOW() - ($2 || ' months')::interval
-        GROUP BY period
-        ORDER BY period DESC
+        GROUP BY mp.period, mp.month_start
+        ORDER BY mp.period DESC
       ),
       at_risk_prediction AS (
         SELECT
@@ -1278,81 +1288,6 @@ export const dashboardController = {
   }),
 
   /**
-   * GET /api/dashboard/system-health
-   * Get system health status
-   */
-  getSystemHealth: asyncHandler(async (req, res) => {
-    const db = getDBConnection();
-
-    // Basic health check
-    const healthCheck = {
-      status: "healthy",
-      timestamp: new Date().toISOString(),
-      database: "connected",
-      api: "operational",
-      uptime_percentage: 99.9,
-    };
-
-    sendSuccess(res, STATUS.OK, healthCheck);
-  }),
-
-  /**
-   * GET /api/dashboard/custom-reports
-   * Get saved custom reports
-   */
-  getCustomReports: asyncHandler(async (req, res) => {
-    // Placeholder - would need a custom_reports table
-    sendSuccess(res, STATUS.OK, {
-      reports: [],
-      message: "Custom reports feature coming soon",
-    });
-  }),
-
-  /**
-   * POST /api/dashboard/custom-reports
-   * Create a new custom report
-   */
-  createCustomReport: asyncHandler(async (req, res) => {
-    // Placeholder - would need a custom_reports table
-    const { name, type, filters, metrics } = req.body;
-
-    sendSuccess(res, STATUS.CREATED, {
-      message: "Custom report creation coming soon",
-      report_config: { name, type, filters, metrics },
-    });
-  }),
-
-  /**
-   * GET /api/dashboard/export-data
-   * Get available data exports
-   */
-  exportDashboardData: asyncHandler(async (req, res) => {
-    sendSuccess(res, STATUS.OK, {
-      available_exports: [
-        "customers",
-        "subscriptions",
-        "invoices",
-        "transactions",
-      ],
-      message: "Export data feature coming soon",
-    });
-  }),
-
-  /**
-   * POST /api/dashboard/export-data
-   * Initiate a new data export
-   */
-  initiateDataExport: asyncHandler(async (req, res) => {
-    const { export_type, format, date_range } = req.body;
-
-    sendSuccess(res, STATUS.ACCEPTED, {
-      message: "Export initiated",
-      export_config: { export_type, format, date_range },
-      status: "processing",
-    });
-  }),
-
-  /**
    * GET /api/dashboard/notifications
    * Get dashboard notifications
    */
@@ -1438,61 +1373,6 @@ export const dashboardController = {
   markAllNotificationsAsRead: asyncHandler(async (req, res) => {
     sendSuccess(res, STATUS.OK, {
       message: "All notifications marked as read",
-    });
-  }),
-
-  /**
-   * GET /api/dashboard/settings
-   * Get dashboard settings for the user
-   */
-  getDashboardSettings: asyncHandler(async (req, res) => {
-    const userId = req.user.id;
-
-    // Placeholder settings - would be stored in a user_settings table
-    const settings = {
-      user_id: userId,
-      theme: "light",
-      currency: "USD",
-      timezone: "UTC",
-      notifications_enabled: true,
-      email_reports: true,
-      dashboard_layout: "default",
-    };
-
-    sendSuccess(res, STATUS.OK, { settings });
-  }),
-
-  /**
-   * PUT /api/dashboard/settings
-   * Update dashboard settings
-   */
-  updateDashboardSettings: asyncHandler(async (req, res) => {
-    const userId = req.user.id;
-    const {
-      theme,
-      currency,
-      timezone,
-      notifications_enabled,
-      email_reports,
-      dashboard_layout,
-    } = req.body;
-
-    // Would typically update a user_settings table
-    const updatedSettings = {
-      user_id: userId,
-      theme: theme || "light",
-      currency: currency || "USD",
-      timezone: timezone || "UTC",
-      notifications_enabled:
-        notifications_enabled !== undefined ? notifications_enabled : true,
-      email_reports: email_reports !== undefined ? email_reports : true,
-      dashboard_layout: dashboard_layout || "default",
-      updated_at: new Date().toISOString(),
-    };
-
-    sendSuccess(res, STATUS.OK, {
-      message: "Settings updated successfully",
-      settings: updatedSettings,
     });
   }),
 };

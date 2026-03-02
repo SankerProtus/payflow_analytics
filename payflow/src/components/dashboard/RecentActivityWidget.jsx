@@ -25,7 +25,7 @@ const RecentActivityWidget = () => {
       });
       setActivities(response.data.activities || []);
     } catch (err) {
-      console.error("Failed to load activities:", err);
+      // Silently fail - non-critical widget
     } finally {
       setLoading(false);
     }

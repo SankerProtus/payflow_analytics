@@ -16,7 +16,7 @@ const TopCustomersWidget = () => {
       const response = await dashboardAPI.getTopCustomers({ limit: 5 });
       setTopCustomers(response.data.top_customers || []);
     } catch (err) {
-      console.error("Failed to load top customers:", err);
+      // Silently fail - non-critical widget
     } finally {
       setLoading(false);
     }

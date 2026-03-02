@@ -270,7 +270,6 @@ const Billing = () => {
                       key={`payment-form-${customerId}`}
                       customerId={customerId}
                       onSuccess={handlePaymentMethodAdded}
-                      onError={(error) => console.error(error)}
                       setAsDefault={true}
                     />
                   )}

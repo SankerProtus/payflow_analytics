@@ -93,7 +93,6 @@ const Signup = () => {
         navigate("/login");
       }
     } catch (err) {
-      console.error("Signup error:", err);
       setErrors({
         general:
           err.response?.data?.message ||

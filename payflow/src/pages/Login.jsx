@@ -54,7 +54,6 @@ const Login = () => {
         navigate("/dashboard");
       }
     } catch (err) {
-      console.error("Login error:", err);
       setErrors({
         general:
           err.response?.data?.message ||

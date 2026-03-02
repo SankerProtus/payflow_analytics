@@ -33,7 +33,6 @@ export const useCustomerData = () => {
           setCustomer(null);
         }
       } catch (err) {
-        console.error("Error fetching customer:", err);
         setError(err.response?.data?.error || "Failed to load customer data");
       } finally {
         setLoading(false);

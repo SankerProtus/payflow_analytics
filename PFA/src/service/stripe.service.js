@@ -21,7 +21,7 @@ export const stripeService = {
     try {
       // Get customer's Stripe customer ID
       const customerResult = await db.query(
-        "SELECT stripe_customer_id, id FROM customers WHERE id = $1 AND user_id = $2",
+        "SELECT stripe_customer_id, id, email, name FROM customers WHERE id = $1 AND user_id = $2",
         [customerId, userId],
       );
 
@@ -29,11 +29,44 @@ export const stripeService = {
         throw new Error("Customer not found");
       }
 
-      const { stripe_customer_id, id: dbCustomerId } = customerResult.rows[0];
+      let {
+        stripe_customer_id,
+        id: dbCustomerId,
+        email,
+        name,
+      } = customerResult.rows[0];
+
+      // If customer doesn't exist in Stripe yet, create them
+      if (!stripe_customer_id || !stripe_customer_id.startsWith("cus_")) {
+        logger.info(
+          "[STRIPE SERVICE] Creating customer in Stripe before creating subscription",
+          {
+            customerId: dbCustomerId,
+            email,
+          },
+        );
+
+        const stripeCustomer = await stripe.customers.create({
+          email,
+          name: name || undefined,
+          metadata: {
+            internal_customer_id: dbCustomerId,
+            internal_user_id: userId,
+          },
+        });
+
+        stripe_customer_id = stripeCustomer.id;
+
+        // Update the customer record with the real Stripe customer ID
+        await db.query(
+          "UPDATE customers SET stripe_customer_id = $1, updated_at = NOW() WHERE id = $2",
+          [stripe_customer_id, dbCustomerId],
+        );
+      }
 
       // Get plan details
       const planResult = await db.query(
-        "SELECT stripe_price_id, stripe_product_id, name FROM plans WHERE id = $1",
+        "SELECT stripe_price_id, stripe_product_id, name, billing_interval FROM subscription_plans WHERE id = $1",
         [planId],
       );
 
@@ -41,7 +74,7 @@ export const stripeService = {
         throw new Error("Plan not found");
       }
 
-      const { stripe_price_id } = planResult.rows[0];
+      const { stripe_price_id, billing_interval } = planResult.rows[0];
 
       // Create subscription in Stripe
       const subscriptionParams = {
@@ -71,9 +104,9 @@ export const stripeService = {
       const insertResult = await db.query(
         `INSERT INTO subscriptions (
           customer_id, stripe_subscription_id, plan_id, status,
-          amount, currency, current_period_start, current_period_end,
-          cancel_at_period_end, trial_start, trial_end
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          amount, currency, billing_interval, current_period_start, current_period_end,
+          cancel_at_period_end, trial_end, last_event_timestamp
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *`,
         [
           dbCustomerId,
@@ -82,15 +115,14 @@ export const stripeService = {
           stripeSubscription.status,
           stripeSubscription.items.data[0].price.unit_amount,
           stripeSubscription.currency,
+          billing_interval,
           new Date(stripeSubscription.current_period_start * 1000),
           new Date(stripeSubscription.current_period_end * 1000),
           stripeSubscription.cancel_at_period_end,
-          stripeSubscription.trial_start
-            ? new Date(stripeSubscription.trial_start * 1000)
-            : null,
           stripeSubscription.trial_end
             ? new Date(stripeSubscription.trial_end * 1000)
             : null,
+          stripeSubscription.created || Math.floor(Date.now() / 1000),
         ],
       );
 
@@ -134,7 +166,7 @@ export const stripeService = {
       const updateParams = {};
       if (updates.planId) {
         const planResult = await db.query(
-          "SELECT stripe_price_id FROM plans WHERE id = $1",
+          "SELECT stripe_price_id FROM subscription_plans WHERE id = $1",
           [updates.planId],
         );
         if (planResult.rows.length > 0) {
@@ -453,7 +485,7 @@ export const stripeService = {
   }) {
     try {
       const customerResult = await db.query(
-        "SELECT stripe_customer_id, id FROM customers WHERE id = $1 AND user_id = $2",
+        "SELECT stripe_customer_id, id, email, name FROM customers WHERE id = $1 AND user_id = $2",
         [customerId, userId],
       );
 
@@ -461,7 +493,40 @@ export const stripeService = {
         throw new Error("Customer not found");
       }
 
-      const { stripe_customer_id, id: dbCustomerId } = customerResult.rows[0];
+      let {
+        stripe_customer_id,
+        id: dbCustomerId,
+        email,
+        name,
+      } = customerResult.rows[0];
+
+      // If customer doesn't exist in Stripe yet, create them
+      if (!stripe_customer_id || !stripe_customer_id.startsWith("cus_")) {
+        logger.info(
+          "[STRIPE SERVICE] Creating customer in Stripe before attaching payment method",
+          {
+            customerId: dbCustomerId,
+            email,
+          },
+        );
+
+        const stripeCustomer = await stripe.customers.create({
+          email,
+          name: name || undefined,
+          metadata: {
+            internal_customer_id: dbCustomerId,
+            internal_user_id: userId,
+          },
+        });
+
+        stripe_customer_id = stripeCustomer.id;
+
+        // Update the customer record with the real Stripe customer ID
+        await db.query(
+          "UPDATE customers SET stripe_customer_id = $1, updated_at = NOW() WHERE id = $2",
+          [stripe_customer_id, dbCustomerId],
+        );
+      }
 
       // Attach payment method to customer in Stripe
       await stripe.paymentMethods.attach(paymentMethodId, {
@@ -567,11 +632,40 @@ export const stripeService = {
 
       const { stripe_customer_id } = customerResult.rows[0];
 
-      // Get from Stripe
-      const paymentMethods = await stripe.paymentMethods.list({
-        customer: stripe_customer_id,
-        type: "card",
-      });
+      // Check if this is a real Stripe customer ID
+      const isRealStripeCustomer =
+        stripe_customer_id && stripe_customer_id.startsWith("cus_");
+
+      let stripePaymentMethods = [];
+
+      if (isRealStripeCustomer) {
+        // Get from Stripe only if it's a real Stripe customer
+        try {
+          const paymentMethods = await stripe.paymentMethods.list({
+            customer: stripe_customer_id,
+            type: "card",
+          });
+          stripePaymentMethods = paymentMethods.data;
+        } catch (stripeError) {
+          logger.warn(
+            "[STRIPE SERVICE] Could not fetch payment methods from Stripe",
+            {
+              error: stripeError.message,
+              customerId,
+              stripe_customer_id,
+            },
+          );
+          // Continue with empty Stripe results
+        }
+      } else {
+        logger.info(
+          "[STRIPE SERVICE] Customer not synced to Stripe, returning only local payment methods",
+          {
+            customerId,
+            stripe_customer_id,
+          },
+        );
+      }
 
       // Also get from database
       const dbPaymentMethods = await db.query(
@@ -580,7 +674,7 @@ export const stripeService = {
       );
 
       return {
-        paymentMethods: paymentMethods.data,
+        paymentMethods: stripePaymentMethods,
         dbPaymentMethods: dbPaymentMethods.rows,
       };
     } catch (error) {

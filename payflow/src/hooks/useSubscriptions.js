@@ -20,7 +20,6 @@ export const useSubscriptions = (customerId) => {
         const response = await subscriptionAPI.listByCustomer(customerId);
         setSubscriptions(response.data?.data || []);
       } catch (err) {
-        console.error("Error fetching subscriptions:", err);
         setError(err.response?.data?.error || "Failed to load subscriptions");
       } finally {
         setLoading(false);

@@ -56,7 +56,6 @@ const AddCustomerModal = ({ isOpen, onClose, onSuccess }) => {
         onClose();
       }, 1500);
     } catch (err) {
-      console.error("Error creating customer:", err);
       setError(
         err.response?.data?.message ||
           err.message ||

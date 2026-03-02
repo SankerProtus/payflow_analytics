@@ -48,12 +48,20 @@ export const dunningController = {
                 c.email as customer_email,
                 c.name as customer_name,
                 s.id as subscription_id,
+                s.status as subscription_status,
                 i.id as invoice_id,
                 i.stripe_invoice_id,
                 i.amount_due,
                 i.amount_paid,
                 i.retry_count,
                 i.payment_failed_at as last_retry_at,
+                EXTRACT(DAY FROM NOW() - i.payment_failed_at)::integer as days_overdue,
+                -- Calculate risk level based on days overdue
+                CASE
+                    WHEN EXTRACT(DAY FROM NOW() - i.payment_failed_at) > 7 THEN 'high'
+                    WHEN EXTRACT(DAY FROM NOW() - i.payment_failed_at) >= 3 THEN 'medium'
+                    ELSE 'low'
+                END as risk_level,
                 -- Estimate next retry (typically 3, 5, 7 days after failure)
                 CASE
                     WHEN i.retry_count = 0 THEN i.payment_failed_at + INTERVAL '3 days'
@@ -128,8 +136,34 @@ export const dunningController = {
     const summaryResult = await db.query(summaryQuery, [userId]);
     const summary = summaryResult.rows[0];
 
+    // Transform dunning cases to camelCase format for frontend
+    const transformedDunningCases = dunningResult.rows.map((row) => ({
+      id: row.id,
+      invoiceId: row.invoice_id,
+      stripeInvoiceId: row.stripe_invoice_id,
+      customer: {
+        id: row.customer_id,
+        email: row.customer_email,
+        name: row.customer_name,
+      },
+      subscriptionId: row.subscription_id,
+      subscriptionStatus: row.subscription_status,
+      amountDue: row.amount_due,
+      amountPaid: row.amount_paid,
+      retryCount: row.retry_count,
+      daysOverdue: row.days_overdue,
+      riskLevel: row.risk_level,
+      lastRetryAt: row.last_retry_at,
+      nextRetryAt: row.next_retry_at,
+      status: row.status,
+      resolution: row.resolution,
+      failedAt: row.failed_at,
+      resolvedAt: row.resolved_at,
+      createdAt: row.created_at,
+    }));
+
     sendSuccess(res, STATUS.OK, {
-      dunning_cases: dunningResult.rows,
+      dunning_cases: transformedDunningCases,
       pagination: {
         page,
         limit,
