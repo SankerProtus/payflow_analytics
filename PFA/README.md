@@ -98,6 +98,7 @@ After deployment, subscription plans need to be created in Stripe and synced to 
 3. Starts the server (`npm start`)
 
 **Required Environment Variables for Stripe:**
+
 ```bash
 STRIPE_SECRET_KEY=sk_test_... # or sk_live_... for production
 STRIPE_PUBLISHABLE_KEY=pk_test_... # or pk_live_... for production
@@ -105,6 +106,7 @@ STRIPE_WEBHOOK_SECRET=whsec_... # From Stripe Dashboard -> Webhooks
 ```
 
 **To manually run Stripe setup (if needed):**
+
 ```bash
 # Locally
 npm run setup-stripe
@@ -114,6 +116,7 @@ railway run npm run setup-stripe
 ```
 
 **Verify plans are created:**
+
 ```bash
 curl https://your-app.railway.app/api/billing/plans
 ```

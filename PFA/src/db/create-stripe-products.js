@@ -245,7 +245,10 @@ async function createStripeProductsAndPrices() {
       await db.end();
       console.log("✅ Database connection closed\n");
     } catch (err) {
-      console.warn("⚠️  Warning: Could not close database connection:", err.message);
+      console.warn(
+        "⚠️  Warning: Could not close database connection:",
+        err.message,
+      );
     }
   }
 }

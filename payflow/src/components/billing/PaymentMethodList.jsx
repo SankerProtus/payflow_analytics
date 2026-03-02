@@ -3,7 +3,7 @@
  * Display and manage saved payment methods
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { CreditCard, Trash2, Check, AlertCircle } from "lucide-react";
 import Button from "../common/Button";
 import Card from "../common/Card";
@@ -17,13 +17,7 @@ const PaymentMethodList = ({ customerId, onUpdate }) => {
   const [error, setError] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
-  useEffect(() => {
-    if (customerId) {
-      fetchPaymentMethods();
-    }
-  }, [customerId]);
-
-  const fetchPaymentMethods = async () => {
+  const fetchPaymentMethods = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -34,7 +28,13 @@ const PaymentMethodList = ({ customerId, onUpdate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [customerId]);
+
+  useEffect(() => {
+    if (customerId) {
+      fetchPaymentMethods();
+    }
+  }, [customerId, fetchPaymentMethods]);
 
   const handleDelete = async (paymentMethodId) => {
     if (

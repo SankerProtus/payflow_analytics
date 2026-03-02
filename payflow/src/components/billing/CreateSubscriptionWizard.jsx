@@ -34,11 +34,9 @@ const CreateSubscriptionWizard = ({
   onSuccess,
   preSelectedCustomerId = null,
 }) => {
-  // Stripe hooks
   const stripe = useStripe();
   const elements = useElements();
 
-  // State Management
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     customerId: preSelectedCustomerId || "",
@@ -48,27 +46,22 @@ const CreateSubscriptionWizard = ({
     metadata: {},
   });
 
-  // Data Loading States
   const [customers, setCustomers] = useState([]);
   const [plans, setPlans] = useState([]);
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showAddPaymentMethod, setShowAddPaymentMethod] = useState(false);
-  const [paymentFormMounted, setPaymentFormMounted] = useState(false);
 
-  // UI States
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
   const [error, setError] = useState("");
   const [validationErrors, setValidationErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Refs
   const abortControllerRef = useRef(null);
   const isMounted = useRef(true);
 
-  // Lifecycle
   useEffect(() => {
     isMounted.current = true;
     return () => {
@@ -82,7 +75,6 @@ const CreateSubscriptionWizard = ({
       resetWizard();
       loadInitialData();
     } else {
-      // Cleanup when closed
       abortControllerRef.current?.abort();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -97,7 +89,6 @@ const CreateSubscriptionWizard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.customerId, isOpen, customers]);
 
-  // Data Loading Functions
   const loadInitialData = async () => {
     setDataLoading(true);
     setError("");
@@ -122,7 +113,6 @@ const CreateSubscriptionWizard = ({
         : [];
       setPlans(activePlans);
 
-      // Load payment methods if customer is pre-selected
       if (preSelectedCustomerId) {
         await loadPaymentMethods(preSelectedCustomerId);
         const customer = fetchedCustomers.find(
@@ -151,7 +141,6 @@ const CreateSubscriptionWizard = ({
 
       setPaymentMethods(validMethods);
 
-      // Auto-select default payment method
       const defaultMethod = validMethods.find((m) => m.is_default);
       if (defaultMethod && !formData.paymentMethodId) {
         setFormData((prev) => ({
@@ -165,7 +154,6 @@ const CreateSubscriptionWizard = ({
     }
   };
 
-  // Validation Functions
   const validateStep = (stepNumber) => {
     const errors = {};
 
@@ -193,7 +181,6 @@ const CreateSubscriptionWizard = ({
         if (!formData.paymentMethodId) {
           errors.paymentMethodId = "Please select or add a payment method";
         } else {
-          // Validate payment method exists and belongs to customer
           const pm = paymentMethods.find(
             (m) => m.stripe_payment_method_id === formData.paymentMethodId,
           );
@@ -212,7 +199,6 @@ const CreateSubscriptionWizard = ({
         break;
 
       case 4:
-        // Final validation
         if (
           !formData.customerId ||
           !formData.planId ||
@@ -227,7 +213,6 @@ const CreateSubscriptionWizard = ({
     return Object.keys(errors).length === 0;
   };
 
-  // Navigation Functions
   const handleNext = () => {
     if (!validateStep(step)) {
       const errorMessages = Object.values(validationErrors).join(", ");
@@ -246,7 +231,6 @@ const CreateSubscriptionWizard = ({
     setStep((prev) => Math.max(prev - 1, 1));
   };
 
-  // Form Handlers
   const handleCustomerSelect = (customerId) => {
     setFormData((prev) => ({ ...prev, customerId }));
     setError("");
@@ -275,11 +259,9 @@ const CreateSubscriptionWizard = ({
     setFormData((prev) => ({ ...prev, trialPeriodDays: normalizedDays }));
   };
 
-  // Submission
   const handleSubmit = async (e) => {
     e?.preventDefault();
 
-    // Final validation
     if (!validateStep(4)) {
       setError("Please complete all required fields");
       return;
@@ -303,12 +285,10 @@ const CreateSubscriptionWizard = ({
 
       setSuccessMessage("Subscription created successfully!");
 
-      // Trigger success callback
       if (onSuccess) {
         await onSuccess(response.data);
       }
 
-      // Wait briefly to show success message
       setTimeout(() => {
         if (isMounted.current) {
           handleClose();
@@ -317,7 +297,6 @@ const CreateSubscriptionWizard = ({
     } catch (err) {
       console.error("[Subscription] Creation failed:", err);
 
-      // Extract meaningful error message
       const errorMessage =
         err.response?.data?.error ||
         err.response?.data?.message ||
@@ -326,7 +305,6 @@ const CreateSubscriptionWizard = ({
 
       setError(errorMessage);
 
-      // Move back to relevant step based on error
       if (errorMessage.includes("payment method")) {
         setStep(3);
       } else if (errorMessage.includes("plan")) {
@@ -341,33 +319,27 @@ const CreateSubscriptionWizard = ({
     }
   };
 
-  // Payment Method Handlers
   const handleAddPaymentMethodSuccess = async (data) => {
     await loadPaymentMethods(formData.customerId);
     setFormData((prev) => ({
       ...prev,
       paymentMethodId: data.paymentMethodId,
     }));
-    // Don't unmount the form immediately - keep it mounted
     setSuccessMessage("Payment method added successfully!");
     setTimeout(() => {
       setSuccessMessage("");
-      // Now hide the form after success message is shown
       setShowAddPaymentMethod(false);
     }, 1500);
   };
 
   const handleShowAddPaymentMethod = () => {
     setShowAddPaymentMethod(true);
-    setPaymentFormMounted(true);
   };
 
   const handleHideAddPaymentMethod = () => {
-    // Keep the form mounted but hidden to prevent Element unmounting issues
     setShowAddPaymentMethod(false);
   };
 
-  // Utility Functions
   const resetWizard = () => {
     setStep(1);
     setFormData({
@@ -380,7 +352,6 @@ const CreateSubscriptionWizard = ({
     setSelectedPlan(null);
     setSelectedCustomer(null);
     setShowAddPaymentMethod(false);
-    setPaymentFormMounted(false);
     setError("");
     setValidationErrors({});
     setSuccessMessage("");
@@ -472,7 +443,7 @@ const CreateSubscriptionWizard = ({
         </div>
         {/* Payment step stays mounted after first render to preserve CardElement */}
         <div style={{ display: step === 3 ? "block" : "none" }}>
-          {(step === 3 || paymentFormMounted) && renderPaymentStep()}
+          {renderPaymentStep()}
         </div>
         <div style={{ display: step === 4 ? "block" : "none" }}>
           {step === 4 && renderConfirmationStep()}
@@ -722,7 +693,7 @@ const CreateSubscriptionWizard = ({
       </div>
 
       {/* Add Payment Method Form */}
-      {(showAddPaymentMethod || paymentFormMounted) && (
+      {showAddPaymentMethod && (
         <div
           className={`p-5 bg-gray-50 border border-gray-200 rounded-lg transition-all ${
             showAddPaymentMethod ? "block" : "hidden"
@@ -748,7 +719,6 @@ const CreateSubscriptionWizard = ({
             </div>
           ) : (
             <PaymentMethodForm
-              key={`payment-form-${formData.customerId}-${paymentFormMounted}`}
               customerId={formData.customerId}
               inline={true}
               onSuccess={handleAddPaymentMethodSuccess}

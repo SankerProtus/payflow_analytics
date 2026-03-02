@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import { CreditCard, Lock } from "lucide-react";
+import { CreditCard, Lock, WifiOff } from "lucide-react";
 import Button from "../common/Button";
 import ErrorMessage from "../common/ErrorMessage";
 import { paymentAPI } from "../../api/payment.api";
@@ -63,7 +63,6 @@ const PaymentMethodForm = ({
     },
   });
 
-  // Proper lifecycle management
   useEffect(() => {
     isMounted.current = true;
 
@@ -73,18 +72,16 @@ const PaymentMethodForm = ({
     cardElementInstanceRef.current = null;
 
     return () => {
-      // Cleanup on unmount
       isMounted.current = false;
       setCardReady(false);
       cardElementInstanceRef.current = null;
     };
   }, []);
 
-  const handleCardReady = useCallback(() => {
+  const handleCardReady = () => {
     // CRITICAL: Store the actual element instance that just became ready
     // This prevents accessing a destroyed element instance
     if (isMounted.current && elementsRef.current) {
-      // Verify we can actually get the element
       const cardElement = elementsRef.current.getElement(CardElement);
 
       if (cardElement) {
@@ -93,15 +90,30 @@ const PaymentMethodForm = ({
         setError(null);
       }
     }
-  }, []);
+  };
 
-  const handleCardChange = useCallback((event) => {
+  const handleCardChange = (event) => {
     if (event.error) {
       setError(event.error.message);
     } else {
       setError(null);
     }
-  }, []);
+  };
+
+  const isNetworkError = (error) => {
+    const errorMessage = error?.message?.toLowerCase() || "";
+    const errorType = error?.type || "";
+
+    return (
+      errorMessage.includes("network") ||
+      errorMessage.includes("fetch") ||
+      errorMessage.includes("internet") ||
+      errorMessage.includes("disconnected") ||
+      errorMessage.includes("connection") ||
+      errorType === "validation_error" ||
+      errorMessage.includes("could not retrieve data")
+    );
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -127,7 +139,6 @@ const PaymentMethodForm = ({
       return;
     }
 
-    // Prevent double submission
     if (loading) return;
 
     setLoading(true);
@@ -139,7 +150,6 @@ const PaymentMethodForm = ({
       const cardElement = elementsRef.current.getElement(CardElement);
 
       if (!cardElement) {
-        // Element was unmounted between ready and submit
         throw new Error(
           "Card element is no longer available. Please try again.",
         );
@@ -152,7 +162,6 @@ const PaymentMethodForm = ({
         );
       }
 
-      // Create payment method with Stripe using ref (prevents stale closure)
       const { error: stripeError, paymentMethod } =
         await stripeRef.current.createPaymentMethod({
           type: "card",
@@ -164,14 +173,12 @@ const PaymentMethodForm = ({
         throw new Error(stripeError.message);
       }
 
-      // Attach payment method to customer
       await paymentAPI.attachPaymentMethod({
         customerId,
         paymentMethodId: paymentMethod.id,
         setAsDefault,
       });
 
-      // Success callback
       if (onSuccess) {
         await onSuccess({
           paymentMethodId: paymentMethod.id,
@@ -180,7 +187,6 @@ const PaymentMethodForm = ({
         });
       }
 
-      // Clear the form
       cardElement.clear();
 
       if (showBillingDetails) {
@@ -198,8 +204,15 @@ const PaymentMethodForm = ({
       }
     } catch (err) {
       console.error("PaymentMethodForm error:", err);
-      const errorMessage =
+
+      let errorMessage =
         err.message || "An error occurred while adding the payment method";
+
+      if (isNetworkError(err)) {
+        errorMessage =
+          "Unable to connect to Stripe's servers. Please check: (1) Your internet connection is stable, (2) Firewall/VPN isn't blocking r.stripe.com or js.stripe.com, (3) Ad blocker or security software isn't interfering with Stripe.";
+      }
+
       setError(errorMessage);
 
       if (onError) {
@@ -335,6 +348,22 @@ const PaymentMethodForm = ({
                 required={!inline}
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Network/Stripe loading warning */}
+      {!stripe && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+          <WifiOff className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-amber-800">
+              Connecting to Stripe...
+            </h3>
+            <p className="text-xs text-amber-700 mt-1">
+              If this takes too long, please check your internet connection or
+              disable any VPN/ad blockers that might block Stripe services.
+            </p>
           </div>
         </div>
       )}

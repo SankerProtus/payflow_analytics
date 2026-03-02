@@ -38,7 +38,7 @@ const Billing = () => {
     refetch,
   } = useCustomerData();
 
-  // Get subscriptions for customer
+
   const {
     subscriptions,
     loading: subscriptionsLoading,
@@ -81,7 +81,6 @@ const Billing = () => {
     );
   }
 
-  // Show error if customer fetch failed
   if (customerError) {
     return (
       <Layout>

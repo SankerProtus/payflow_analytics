@@ -23,22 +23,6 @@ export const authAPI = {
     return api.post("/auth/logout");
   },
 
-  verifyEmail: (token) => {
-    return api.post("/auth/verify-email", { token });
-  },
-
-  resendVerification: (email) => {
-    return api.post("/auth/resend-verification", { email });
-  },
-
-  forgotPassword: (email) => {
-    return api.post("/auth/forgot-password", { email });
-  },
-
-  resetPassword: (token, newPassword) => {
-    return api.post("/auth/reset-password", { token, newPassword });
-  },
-
   getProfile: () => {
     return api.get("/auth/profile");
   },

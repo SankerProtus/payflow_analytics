@@ -129,27 +129,8 @@ const Login = () => {
               error={errors.password}
               required
               autocomplete="current-password"
-              className="mb-0"
+              className="mb-6"
             />
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center justify-start">
-                <Link
-                  to="/verify-account"
-                  className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
-                >
-                  Verify Email
-                </Link>
-              </div>
-              <div className="flex items-center justify-end">
-                <Link
-                  to="/forgot-password"
-                  className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-            </div>
 
             <button
               type="submit"

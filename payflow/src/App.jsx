@@ -14,9 +14,6 @@ import Profile from "./pages/Profile";
 import Reports from "./pages/Reports";
 import Billing from "./pages/Billing";
 import Loader from "./components/common/Loader";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import VerifyAccount from "./pages/VerifyAccount";
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -60,24 +57,6 @@ function AppRoutes() {
           </PublicRoute>
         }
       />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route
-        path="/reset-password"
-        element={
-          <PublicRoute>
-            <ResetPassword />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/verify-account"
-        element={
-          <PublicRoute>
-            <VerifyAccount />
-          </PublicRoute>
-        }
-      />
-
       {/* Protected Routes */}
       <Route
         path="/dashboard"

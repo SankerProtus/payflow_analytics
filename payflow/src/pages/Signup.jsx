@@ -90,7 +90,7 @@ const Signup = () => {
       );
 
       if (response.data) {
-        navigate("/verify-account");
+        navigate("/login");
       }
     } catch (err) {
       console.error("Signup error:", err);
